@@ -58,7 +58,7 @@ public class SecurityConfig {
                     allowedURL.forEach(url -> auth.requestMatchers(url).permitAll());
 
                     // 管理員權限
-                    auth.requestMatchers("/api/UserAdmin/**","/api/ReserveAdmin/**","/api/ordersAdmin/**","/api/eventAdmin/**").hasAuthority("ROLE_ADMIN");
+                    auth.requestMatchers("/api/UserAdmin/**","/api/ReserveAdmin/**","/api/ordersAdmin/**","/api/eventAdmin/**","/api/CaregiverAdmin/**").hasAuthority("ROLE_ADMIN");
 
                     // 其他請求需要認證
                     auth.anyRequest().authenticated();
