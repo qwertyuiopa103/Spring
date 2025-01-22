@@ -12,7 +12,7 @@ public interface OrderService {
 	//新增 
 	OrderBean createOrder(OrderBean order);
 	//查詢所有
-	List<OrderBean> findAllOrders(int page, int pageSize);
+	List<OrderBean> findAllOrders();
 	//根據使用者ID查訂單
 	List<OrderBean> findOrdersByUsers(UserBean user);
 	// 依照Caregiver查詢
@@ -29,7 +29,10 @@ public interface OrderService {
     public OrderBean updatePaymentMethodByOrderId(int orderId, String PaymentMethod);
     //檢查看護有無重疊時間的訂單
     boolean checkForOverlappingOrder(int caregiverNO, int orderId, Date startDate, Date endDate);
-    
+    //算總數
     long getCount();
+    //根據訂單ID改狀態和取消ID
+    OrderBean updateOrderStatusAndCancellationId(int orderId, String status, Integer cancellationId);
+    
     
 }

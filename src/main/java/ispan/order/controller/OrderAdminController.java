@@ -1,6 +1,7 @@
 package ispan.order.controller;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import ispan.order.model.OrderBean;
 import ispan.order.model.OrderService;
+import ispan.order.dto.OrderStatusUpdateDTO;
 //test
 @RestController //返回的數據自動轉換成 JSON 格式。
 @RequestMapping("/api/ordersAdmin") //設定這個控制器的基礎路徑為 /orders
@@ -44,14 +46,15 @@ public class OrderAdminController {
 	    }
 	}
 
-	@GetMapping("/AllOrders")
-	public ResponseEntity<List<OrderBean>> findAllOrders(
-	    @RequestParam(defaultValue = "1") int page,  // 頁碼，預設為第1頁
-	    @RequestParam(defaultValue = "10") int pageSize  // 每頁顯示數量，預設為10
-	) {
-	    List<OrderBean> allOrders = orderService.findAllOrders(page, pageSize);
-	    return new ResponseEntity<>(allOrders, HttpStatus.OK);
-	}
+	// 查詢全部訂單
+		@GetMapping("/AllOrders")
+		public ResponseEntity<List<OrderBean>> findAllOrders() {
+		    // 查詢所有訂單
+		    List<OrderBean> allOrders = orderService.findAllOrders();  // 這裡假設你的 findAllOrders 方法可以返回所有訂單
+
+		    // 返回訂單列表
+		    return new ResponseEntity<>(allOrders, HttpStatus.OK);
+		}
 	
 	 @PutMapping("/UpdateOrder/{orderId}")
 	    public ResponseEntity<String> updateOrder(@PathVariable int orderId, @RequestBody OrderBean order) {
@@ -82,6 +85,26 @@ public class OrderAdminController {
 			} catch (Exception e) {
 				return new ResponseEntity<>(HttpStatus.NOT_FOUND);
 			}
+	    }
+	  //根據訂單ID更改狀態還有取消ID
+	    @PutMapping("/updateStatus/{orderId}")
+	    public ResponseEntity<OrderBean> updateOrderStatusAndCancellationId(
+	            @PathVariable int orderId,
+	            @RequestBody OrderStatusUpdateDTO updateDTO) {
+	        try {
+	            OrderBean updatedOrder = orderService.updateOrderStatusAndCancellationId(
+	                orderId, 
+	                updateDTO.getStatus(), 
+	                updateDTO.getCancellationId()
+	            );
+	            if (updatedOrder == null) {
+	                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+	            }
+	            return new ResponseEntity<>(updatedOrder, HttpStatus.OK);
+	        } catch (RuntimeException e) {
+	            // 加入錯誤訊息記錄
+	            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+	        }
 	    }
 	    
 }
