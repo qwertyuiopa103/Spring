@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 import ispan.reserve.model.Reserve;
 import ispan.reserve.service.ReserveService;
 
-
+//Contorllers
 @RestController
 @RequestMapping("/reserve")	//http://localhost:5173/reserve/search
 @CrossOrigin(origins = "http://localhost:5173")
