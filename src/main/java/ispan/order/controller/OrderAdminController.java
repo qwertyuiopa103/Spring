@@ -19,10 +19,8 @@ import org.springframework.web.bind.annotation.RestController;
 import ispan.order.model.OrderBean;
 import ispan.order.model.OrderService;
 import ispan.order.dto.OrderStatusUpdateDTO;
-//test
-//test2
-//test3
-//test4
+//在家測試
+//在家測試2
 @RestController //返回的數據自動轉換成 JSON 格式。
 @RequestMapping("/api/ordersAdmin") //設定這個控制器的基礎路徑為 /orders
 
