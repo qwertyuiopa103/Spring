@@ -1,5 +1,5 @@
 package ispan.event.model;
-//123
+
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 
