@@ -2,6 +2,7 @@ package ispan.order.model;
 
 import java.sql.Date;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -17,6 +18,7 @@ import jakarta.transaction.Transactional;
 public class OrderServcieIMPL implements OrderService {
 	@Autowired
 	private OrderRepository orderRepository;
+	@Autowired
 	private OrderCancelRepository orderCancelRepository;
 
 	//新增
@@ -166,6 +168,11 @@ public class OrderServcieIMPL implements OrderService {
         System.out.println("Cancellation ID: " + cancellationId); // 使用傳入的 cancellationId 參數
 
         return orderRepository.save(order);
+    }
+    @Override
+    public Integer getCancellationIdByOrderId(int orderId) {
+        Optional<OrderBean> order = orderRepository.findById(orderId);
+        return order.map(OrderBean::getCancellation).map(OrderCancelBean::getCancellationId).orElse(null);
     }
 
 }

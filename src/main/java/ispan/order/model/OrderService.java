@@ -33,6 +33,7 @@ public interface OrderService {
     long getCount();
     //根據訂單ID改狀態和取消ID
     OrderBean updateOrderStatusAndCancellationId(int orderId, String status, Integer cancellationId);
-    
+    //根據訂單ID找取消ID
+    Integer getCancellationIdByOrderId(int orderId);
     
 }

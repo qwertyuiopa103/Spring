@@ -6,6 +6,7 @@ import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -19,7 +20,7 @@ import ispan.orderCancel.model.OrderCancelBean;
 import ispan.orderCancel.model.OrderCancelService;
 
 @RestController
-@RequestMapping("/ordercancel")
+@RequestMapping("api/ordercancel")
 public class OrderCancelController {
 	private final OrderCancelService orderCancelService;
 
@@ -31,15 +32,15 @@ public class OrderCancelController {
 
     // 創建新的取消訂單
     @PostMapping("/createcancel")
-    public ResponseEntity<OrderCancelBean> createCancellation(@RequestBody OrderCancelBean orderCancelBean) {
+    public ResponseEntity<OrderCancelBean> createCancellation(@RequestBody  OrderCancelBean orderCancelBean) {
         OrderCancelBean createdOrderCancel = orderCancelService.createCancellation(orderCancelBean);
         return new ResponseEntity<>(createdOrderCancel, HttpStatus.CREATED); // 返回創建成功的狀態碼 201
     }
 
     // 根據 ID 查詢取消訂單
-    @GetMapping("/getcanel/{id}") // 接收 GET 請求，並帶有 ID 參數
-    public ResponseEntity<OrderCancelBean> getCancellationById(@PathVariable Integer id) {
-        Optional<OrderCancelBean> orderCancelBean = orderCancelService.getCancellationById(id);
+    @GetMapping("/getcancel/{cancellationId}") // 接收 GET 請求，並帶有 ID 參數
+    public ResponseEntity<OrderCancelBean> getCancellationById(@PathVariable Integer cancellationId) {
+        Optional<OrderCancelBean> orderCancelBean = orderCancelService.getCancellationById(cancellationId);
         return orderCancelBean.map(
                 ResponseEntity::ok // 如果存在，返回 200 和訂單資料
         ).orElseGet(() -> ResponseEntity.notFound().build()); // 如果找不到，返回 404

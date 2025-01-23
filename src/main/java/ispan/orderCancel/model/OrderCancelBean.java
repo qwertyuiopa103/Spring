@@ -1,6 +1,8 @@
 package ispan.orderCancel.model;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -22,9 +24,9 @@ public class OrderCancelBean {
     @Column(name = "cancellation_id")
     private Integer cancellationId;
     
-    
+    @JsonFormat(pattern = "yyyy-MM-dd")
     @Column(name = "cancel_date", nullable = false)
-    private LocalDateTime cancelDate = LocalDateTime.now(); // 取消日期
+    private LocalDate cancelDate = LocalDate.now();
 
     @Column(name = "cancellation_reason", length = 255, nullable = true)
     private String cancellationReason; // 取消原因

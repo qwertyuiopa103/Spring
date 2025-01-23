@@ -22,6 +22,7 @@ import ispan.order.dto.OrderStatusUpdateDTO;
 //test
 //test2
 //test3
+//test4
 @RestController //返回的數據自動轉換成 JSON 格式。
 @RequestMapping("/api/ordersAdmin") //設定這個控制器的基礎路徑為 /orders
 
@@ -90,23 +91,24 @@ public class OrderAdminController {
 	    }
 	  //根據訂單ID更改狀態還有取消ID
 	    @PutMapping("/updateStatus/{orderId}")
-	    public ResponseEntity<OrderBean> updateOrderStatusAndCancellationId(
-	            @PathVariable int orderId,
-	            @RequestBody OrderStatusUpdateDTO updateDTO) {
-	        try {
-	            OrderBean updatedOrder = orderService.updateOrderStatusAndCancellationId(
-	                orderId, 
-	                updateDTO.getStatus(), 
-	                updateDTO.getCancellationId()
-	            );
-	            if (updatedOrder == null) {
-	                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-	            }
-	            return new ResponseEntity<>(updatedOrder, HttpStatus.OK);
-	        } catch (RuntimeException e) {
-	            // 加入錯誤訊息記錄
-	            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-	        }
-	    }
+	    public ResponseEntity<?> updateOrderStatusAndCancellationId(
+	    	    @PathVariable int orderId,
+	    	    @RequestBody(required = false) OrderStatusUpdateDTO updateDTO) {
+	    	    
+	    	    if (updateDTO == null) {
+	    	        return ResponseEntity.badRequest().body("請求體不能為空");
+	    	    }
+	    	    
+	    	    try {
+	    	        OrderBean updatedOrder = orderService.updateOrderStatusAndCancellationId(
+	    	            orderId, 
+	    	            updateDTO.getStatus(), 
+	    	            updateDTO.getCancellationId()
+	    	        );
+	    	        return ResponseEntity.ok(updatedOrder);
+	    	    } catch (Exception e) {
+	    	        return ResponseEntity.badRequest().body(e.getMessage());
+	    	    }
+	    	}
 	    
 }
