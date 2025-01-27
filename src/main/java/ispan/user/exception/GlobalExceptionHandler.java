@@ -36,4 +36,10 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ex.getMessage());
     }
     // 可添加其他異常處理
+    
+    @ExceptionHandler(SoftDeleteException.class)
+    public ResponseEntity<?> handleSoftDeleteException(SoftDeleteException ex) {
+        // 亦或是 403 或 401
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ex.getMessage());
+    }
 }

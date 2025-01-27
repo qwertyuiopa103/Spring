@@ -96,9 +96,9 @@ public class UserNoAuthContronller {
             user.setUserAddress(userAddress);
             user.setUserRole("ROLE_USER");
             if (isOAuth) {
-                user.setUserVerified(true); // 跳過信箱驗證
+                user.getUserSecurity().setUserVerified(true); // 跳過信箱驗證
             } else {
-                user.setUserVerified(false); // 需要後續驗證
+                user.getUserSecurity().setUserVerified(false); // 需要後續驗證
             }
             // 處理照片
             if (userPhoto != null && !userPhoto.isEmpty()) {
@@ -122,6 +122,11 @@ public class UserNoAuthContronller {
 	@GetMapping("/user/userCount")
 	public long getUserCount() {
 		return userServiceImpl.getUserCount();
+	}
+	
+	@GetMapping("/user/caregiverCount")
+	public long getCaregiverCount() {
+		return userServiceImpl.getCaregiverCount();
 	}
 	
 	@PatchMapping("/user/sendPassword")

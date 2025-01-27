@@ -4,8 +4,10 @@ import java.sql.Date;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Transactional;
 
 public interface ReserveDao extends JpaRepository<Reserve, Integer> {
 	// 根據 User 和 Caregiver 的 ID 查找
@@ -36,4 +38,16 @@ public interface ReserveDao extends JpaRepository<Reserve, Integer> {
                @Param("startDate") Date startDate,
                @Param("endDate") Date endDate
        );
+    
+    
+    @Transactional
+   	@Modifying
+   	@Query("DELETE FROM Reserve c WHERE c.userBean.userID = :userID")
+   	void deleteByUserID(String userID);
+    
+    @Query("SELECT COUNT(o) FROM Reserve o WHERE o.userBean.userID = :userID AND o.status = '待確認'")
+    long countReservestatus(@Param("userID") String userID);
+    
+    @Query("SELECT COUNT(o) FROM Reserve o WHERE o.caregiverBean.caregiverNO = :caregiverNO AND o.status = '待確認'")
+    long countReservestatuscaregiverNO(@Param("caregiverNO") Integer caregiverNO);
 }

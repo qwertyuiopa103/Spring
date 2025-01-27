@@ -5,8 +5,10 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Transactional;
 
 import ispan.caregiver.model.CaregiverBean;
 import ispan.user.model.UserBean;
@@ -49,5 +51,22 @@ public interface OrderRepository extends JpaRepository<OrderBean, Integer> {
     
     @Query("SELECT COUNT(o) FROM OrderBean o ")
     long countOrderBean();
+    
+    @Transactional
+	@Modifying
+	@Query("DELETE FROM OrderBean c WHERE c.user.userID = :userID")
+	void deleteByUserID(String userID);
+    
+    @Transactional
+   	@Modifying
+   	@Query("DELETE FROM OrderBean c WHERE c.caregiver.caregiverNO = :caregiverNO")
+   	void deleteBycaregiverNO(int caregiverNO);
+    
+    @Query("SELECT COUNT(o) FROM OrderBean o WHERE o.user.userID = :userID AND o.status NOT IN ('完成', '已取消')")
+    long countIncompleteOrders(@Param("userID") String userID);
+    
+    @Query("SELECT COUNT(o) FROM OrderBean o WHERE o.caregiver.caregiverNO = :caregiverNO AND o.status NOT IN ('完成', '已取消')")
+    long countOrderstatuscaregiverNO(@Param("caregiverNO") Integer caregiverNO);
+
 
 }

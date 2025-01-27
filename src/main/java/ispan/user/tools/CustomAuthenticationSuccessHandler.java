@@ -49,7 +49,15 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
         if (userOpt.isPresent()) {
             // 用戶已存在
         	UserBean user = userOpt.get();
-        	user.setUserLogin(new Timestamp(System.currentTimeMillis()));
+        	
+
+            // 檢查是否被標記為刪除
+            if (user.getUserSecurity().isUserDeleted()) {
+                response.sendRedirect("http://localhost:5173/#/home/error");
+                return; // 停止後續邏輯
+            }
+        	
+        	user.getUserSecurity().setUserLogin(new Timestamp(System.currentTimeMillis()));
         	userRepository.save(user);
             // 如果尚未驗證
 //            if (user.isUserVerified() != false) {

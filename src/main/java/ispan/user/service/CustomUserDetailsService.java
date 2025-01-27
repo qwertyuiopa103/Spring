@@ -15,27 +15,32 @@ import org.springframework.stereotype.Service;
 
 import ispan.user.model.UserBean;
 import ispan.user.model.UserRepository;
+import ispan.user.model.UserSecurityBean;
+import ispan.user.model.UserSecurityRepository;
 
 @Service
 public class CustomUserDetailsService implements UserDetailsService {
 
     @Autowired
     private UserRepository userRepository;
+    
+    @Autowired
+    private UserSecurityRepository userSecurityRepository;
 
 //    private static final String ADMIN_USER_ID = "USR0001"; // 指定的管理員用戶 ID
 
     @Override
     public UserDetails loadUserByUsername(String userId) throws UsernameNotFoundException {
-        Optional<UserBean> userOpt = userRepository.findById(userId);
+        Optional<UserSecurityBean> userOpt = userSecurityRepository.findById(userId);
 
         if (!userOpt.isPresent()) {
             throw new UsernameNotFoundException("User not found with id: " + userId);
         }
 
-        UserBean user = userOpt.get();
+        UserSecurityBean userSecurity = userOpt.get();
 
         // 判斷用戶是否被鎖定
-        Timestamp lockoutEnd = user.getUserLockoutEnd();
+        Timestamp lockoutEnd = userSecurity.getUserLockoutEnd();
         boolean isLocked = false;
         if (lockoutEnd != null) {
             Timestamp currentTime = new Timestamp(System.currentTimeMillis());
@@ -43,7 +48,9 @@ public class CustomUserDetailsService implements UserDetailsService {
                 isLocked = true;
             } 
         }
-
+        Optional<UserBean> userbean = userRepository.findById(userId);
+        UserBean user = userbean.get();
+        
         List<SimpleGrantedAuthority> authorities = new ArrayList<>();
         authorities.add(new SimpleGrantedAuthority(user.getUserRole()));
 
@@ -55,7 +62,7 @@ public class CustomUserDetailsService implements UserDetailsService {
         return new User(
         		user.getUserID(),
                 user.getUserPassword(),
-                user.isUserActive(),    // 帳號是否啟用
+                userSecurity.isUserActive(),    // 帳號是否啟用
                 true,                   // 帳號是否未過期
                 true,                   // 密碼是否未過期
                 !isLocked,             // 帳號是否未鎖定
