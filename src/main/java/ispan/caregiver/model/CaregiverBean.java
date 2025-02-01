@@ -1,6 +1,7 @@
 package ispan.caregiver.model;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.util.Base64;
 
@@ -21,6 +22,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
@@ -47,17 +49,26 @@ public class CaregiverBean {
     @Column(name = "expYears", length = 3)
     private int expYears;
 
-    @Column(name = "eduExperience", length = 255)
-    private String eduExperience;
+//    @Column(name = "eduExperience", length = 255)
+//    private String eduExperience;
 
     // 改為以「時薪」儲存，使用 Double 型別
-    @Column(name = "hourlyRate")
-    private Double hourlyRate;
+//    @Column(name = "hourlyRate")
+//    private Double hourlyRate;
+    @Column(name = "DaylyRate", nullable = false)
+    private BigDecimal daylyRate; // 日薪 (DECIMAL(10,2))
+    
+    @Column(name = "Services")
+    private String services; 
     
     // 與 User 表的關聯
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "userID", referencedColumnName = "userID")
     private UserBean user;
+    
+    @ManyToOne
+    @JoinColumn(name = "AreaID")
+    private ServiceArea serviceArea;
 
     // 便利方法，用於檢查是否有關聯的使用者
     public boolean hasUser() {

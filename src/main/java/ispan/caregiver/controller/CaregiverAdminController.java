@@ -164,8 +164,8 @@ public class CaregiverAdminController {
 	        existingCaregiver.setCaregiverGender(caregiver.getCaregiverGender());
 	        existingCaregiver.setCaregiverAge(caregiver.getCaregiverAge());
 	        existingCaregiver.setExpYears(caregiver.getExpYears());
-	        existingCaregiver.setEduExperience(caregiver.getEduExperience());
-	        existingCaregiver.setHourlyRate(caregiver.getHourlyRate());
+//	        existingCaregiver.setEduExperience(caregiver.getEduExperience());
+//	        existingCaregiver.setHourlyRate(caregiver.getHourlyRate());
 
 	        // 保存更新
 	        CaregiverBean updatedCaregiver = caregiverService.updateCaregiver(existingCaregiver);

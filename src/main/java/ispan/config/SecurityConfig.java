@@ -47,7 +47,7 @@ public class SecurityConfig {
 
         // 配置開放路徑
        // List<String> allowedURL = List.of("/test/**", "/api/UserNoAuth/**", "/public/**", "/static/**","/api/LoginController/**");
-        List<String> allowedURL = List.of("/api/UserNoAuth/**","/api/LoginController/**","/oauth2/**","/api/OrderNoAuth/**");
+        List<String> allowedURL = List.of("/api/UserNoAuth/**","/api/LoginController/**","/oauth2/**","/api/OrderNoAuth/**","/api/userChat/**");
 
         return http
                 .cors(cors -> cors.configurationSource(request -> corsConfiguration)) // 配置 CORS

@@ -34,69 +34,83 @@ public class UserLoginService {
 	private static final int MAX_FAILED_ATTEMPTS = 3;
 	private static final int LOCKOUT_TIME_MINUTES = 1;
 
-	public String login(String account, String userPassword) {
-		// 使用JPA的findByPhoneOrEmail方法查找用戶
+	 public String login(String account, String userPassword) {
+	        // 使用JPA的findByPhoneOrEmail方法查找用戶
+	        Optional<UserBean> userOptional = userRepository.findByPhoneOrEmail(account);
 
-		Optional<UserBean> userOptional = userRepository.findByPhoneOrEmail(account);
+	        if (userOptional.isPresent()) {
+	            UserBean user = userOptional.get();
+	            // 若關聯的 UserSecurity 尚未綁定用戶資料，則綁定之
+	            user.getUserSecurity().setUsers(user);
+	            if (user.getUserSecurity().isUserDeleted()) {
+	                // 視為帳號不存在
+	                throw new InvalidCredentialsException("帳號不存在或密碼錯誤");
+	            }
 
-		if (userOptional.isPresent()) {
-			UserBean user = userOptional.get();
-			user.getUserSecurity().setUsers(user);
-			if (user.getUserSecurity().isUserDeleted()) {
-				// 視為帳號不存在
-				throw new InvalidCredentialsException("帳號不存在或密碼錯誤");
-			}
+	            if (!user.getUserSecurity().isUserActive()) {
+	                // 帳號被禁用
+	                throw new AccountDisabledException("帳號被禁用，請洽客服");
+	            }
 
-			if (!user.getUserSecurity().isUserActive()) {
-				// 帳號被禁用
-				throw new AccountDisabledException("帳號被禁用，請洽客服");
-			}
+	            if (!user.getUserSecurity().isUserVerified()) {
+	                // 尚未驗證信箱
+	                throw new AccountNotVerifiedException("信箱尚未認證");
+	            }
 
-			if (!user.getUserSecurity().isUserVerified()) {
-				// 尚未驗證信箱
-				throw new AccountNotVerifiedException("信箱尚未認證");
-			}
+	            String storedPassword = user.getUserPassword();
+	            Integer failedAttempts = user.getUserSecurity().getUserFailedLoginAttempts();
+	            Timestamp lockoutEnd = user.getUserSecurity().getUserLockoutEnd();
+	            Timestamp now = new Timestamp(System.currentTimeMillis());
 
-			String storedPassword = user.getUserPassword();
-			Integer failedAttempts = user.getUserSecurity().getUserFailedLoginAttempts();
-			Timestamp lockoutEnd = user.getUserSecurity().getUserLockoutEnd();
+	            // 若鎖定時間已過，重置失敗次數與鎖定時間
+	            if (lockoutEnd != null && now.after(lockoutEnd)) {
+	                failedAttempts = 0;
+	                user.getUserSecurity().setUserFailedLoginAttempts(0);
+	                user.getUserSecurity().setUserLockoutEnd(null);
+	                userRepository.save(user);
+	            }
 
-			boolean userIsLocked = (lockoutEnd != null && lockoutEnd.after(new Timestamp(System.currentTimeMillis())));
+	            // 重新取得是否仍在鎖定狀態 (若鎖定時間未到, lockoutEnd 仍有效)
+	            boolean userIsLocked = (user.getUserSecurity().getUserLockoutEnd() != null 
+	                                    && user.getUserSecurity().getUserLockoutEnd().after(now));
 
-			if (userIsLocked) {
-				throw new AccountLockedException("您的帳號因嘗試登錄次數過多而被鎖定，請稍後再嘗試。"); // 用戶被鎖定
-			}
-			// 使用 BCrypt 進行驗證
-			boolean matches = BCryptEncryptionTool.verify(userPassword, storedPassword);
-			// 密碼正確，重置錯誤登錄次數並更新登錄時間
-			if (matches && !userIsLocked) {
-				user.getUserSecurity().setUserLogin(new Timestamp(System.currentTimeMillis()));
-				user.getUserSecurity().setUserFailedLoginAttempts(0);
-				user.getUserSecurity().setUserLockoutEnd(null);
-				userRepository.save(user); // 使用JPA保存更新的UserBean
-				String token = JwtTool.generateToken(user.getUserID(), user.getUserRole());
-				return token; // 登錄成功
-			} else {
-				failedAttempts++;
-				if (failedAttempts >= MAX_FAILED_ATTEMPTS) {
-					// 鎖定用戶
-					user.getUserSecurity().setUserFailedLoginAttempts(failedAttempts);
-					user.getUserSecurity().setUserLockoutEnd(
-							new Timestamp(System.currentTimeMillis() + (LOCKOUT_TIME_MINUTES * 60 * 1000)));
-					userRepository.save(user); // 更新用戶
-					throw new AccountLockedException("您的帳號因嘗試登錄次數過多而被鎖定，請稍後再嘗試。"); // 登錄失敗並鎖定
-				} else {
-					user.getUserSecurity().setUserFailedLoginAttempts(failedAttempts);
-					user.getUserSecurity().setUserLockoutEnd(null);
-					userRepository.save(user); // 更新用戶
-					throw new InvalidCredentialsException("帳號不存在或密碼錯誤"); // 密碼錯誤
-				}
-			}
-		} else {
-			throw new InvalidCredentialsException("帳號不存在或密碼錯誤"); // 找不到用戶
-		}
-	}
+	            if (userIsLocked) {
+	                throw new AccountLockedException("您的帳號因嘗試登錄次數過多而被鎖定，請稍後再嘗試。");
+	            }
 
+	            // 使用 BCrypt 進行密碼驗證
+	            boolean matches = BCryptEncryptionTool.verify(userPassword, storedPassword);
+	            if (matches) {
+	                // 密碼正確，重置失敗登錄次數與鎖定狀態，並更新登錄時間
+	                user.getUserSecurity().setUserLogin(now);
+	                user.getUserSecurity().setUserFailedLoginAttempts(0);
+	                user.getUserSecurity().setUserLockoutEnd(null);
+	                userRepository.save(user);
+	                String token = JwtTool.generateToken(user.getUserID(), user.getUserRole());
+	                return token;
+	            } else {
+	                // 密碼錯誤，累計失敗次數
+	                failedAttempts++;
+	                user.getUserSecurity().setUserFailedLoginAttempts(failedAttempts);
+
+	                // 若失敗次數已達上限則重新鎖定
+	                if (failedAttempts >= MAX_FAILED_ATTEMPTS) {
+	                    user.getUserSecurity().setUserLockoutEnd(
+	                        new Timestamp(now.getTime() + (LOCKOUT_TIME_MINUTES * 60 * 1000))
+	                    );
+	                    userRepository.save(user);
+	                    throw new AccountLockedException("您的帳號因嘗試登錄次數過多而被鎖定，請稍後再嘗試。");
+	                } else {
+	                    // 失敗次數未達上限，顯示密碼錯誤提示
+	                    user.getUserSecurity().setUserLockoutEnd(null);
+	                    userRepository.save(user);
+	                    throw new InvalidCredentialsException("帳號不存在或密碼錯誤");
+	                }
+	            }
+	        } else {
+	            throw new InvalidCredentialsException("帳號不存在或密碼錯誤");
+	        }
+	    }
 	public Optional<UserBean> findByPhoneOrEmail(String account) {
 		return userRepository.findByPhoneOrEmail(account);
 	}

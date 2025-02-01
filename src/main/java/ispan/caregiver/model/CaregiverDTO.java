@@ -42,8 +42,8 @@ public class CaregiverDTO {
             this.caregiverGender = caregiver.getCaregiverGender();
             this.caregiverAge = caregiver.getCaregiverAge();
             this.expYears = caregiver.getExpYears();
-            this.eduExperience = caregiver.getEduExperience();
-            this.hourlyRate = caregiver.getHourlyRate();
+//            this.eduExperience = caregiver.getEduExperience();
+//            this.hourlyRate = caregiver.getHourlyRate();
             
             UserBean user = caregiver.getUser();
             if (user != null) {
@@ -69,8 +69,8 @@ public class CaregiverDTO {
         caregiver.setCaregiverGender(this.caregiverGender);
         caregiver.setCaregiverAge(this.caregiverAge);
         caregiver.setExpYears(this.expYears);
-        caregiver.setEduExperience(this.eduExperience);
-        caregiver.setHourlyRate(this.hourlyRate);
+//        caregiver.setEduExperience(this.eduExperience);
+//        caregiver.setHourlyRate(this.hourlyRate);
         
         // 設置 User
         UserBean user = new UserBean();

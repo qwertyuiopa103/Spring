@@ -1,5 +1,6 @@
 package ispan.caregiver.model;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -19,5 +20,8 @@ public interface CaregiverRepository extends JpaRepository<CaregiverBean, Intege
 	
 	@Query("SELECT u.caregiverNO FROM CaregiverBean u WHERE u.user.userID = :userID")
 	Optional<Integer> findCaregiverNOByUserID(String userID);
+	
+	List<CaregiverBean> findTop3ByServicesAndServiceAreaOrderByCaregiverNOAsc(String services, ServiceArea serviceArea);
+	List<CaregiverBean> findTop3ByServicesOrderByCaregiverNOAsc(String services);
 	
 }
