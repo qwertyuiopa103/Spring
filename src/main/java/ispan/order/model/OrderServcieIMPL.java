@@ -174,6 +174,14 @@ public class OrderServcieIMPL implements OrderService {
         Optional<OrderBean> order = orderRepository.findById(orderId);
         return order.map(OrderBean::getCancellation).map(OrderCancelBean::getCancellationId).orElse(null);
     }
-
+    @Override
+    public OrderBean updateTradeNo(int orderId, String tradeNo) {
+        // 查訂單
+        OrderBean order = orderRepository.findByOrderId(orderId);
+        // 更新 TradeNo
+        order.setTradeNo(tradeNo); 
+        // 保存並返回更新後的訂單
+        return orderRepository.save(order);
+    }
 }
 

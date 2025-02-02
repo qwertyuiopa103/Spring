@@ -27,6 +27,8 @@ public interface OrderService {
     boolean updateOrderStatusById(int orderId, String status);
     //根據訂單ID改付款方式
     public OrderBean updatePaymentMethodByOrderId(int orderId, String PaymentMethod);
+    //根據訂單ID新增交易號碼
+    OrderBean updateTradeNo(int orderId, String tradeNo);
     //檢查看護有無重疊時間的訂單
     boolean checkForOverlappingOrder(int caregiverNO, int orderId, Date startDate, Date endDate);
     //算總數

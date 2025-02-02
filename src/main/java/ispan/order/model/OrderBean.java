@@ -55,5 +55,6 @@ import lombok.NoArgsConstructor;
 		private int totalPrice;
 		@Column(name="payment_method")
 		private String paymentMethod;
-		
+		@Column(name="TradeNo")
+		private String 	TradeNo;
 	    }

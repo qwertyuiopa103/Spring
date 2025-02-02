@@ -50,4 +50,5 @@ public interface OrderRepository extends JpaRepository<OrderBean, Integer> {
     @Query("SELECT COUNT(o) FROM OrderBean o ")
     long countOrderBean();
 
+
 }

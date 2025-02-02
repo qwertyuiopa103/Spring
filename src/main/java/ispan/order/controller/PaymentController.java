@@ -2,18 +2,21 @@ package ispan.order.controller;
 
 import ispan.order.model.OrderService;
 import ispan.order.model.PaymentService;
+import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api/payment")
 //@CrossOrigin(origins = "http://localhost:5173")
 public class PaymentController {
-
+	@Autowired
     private final PaymentService paymentService;
 
     @Autowired
@@ -55,19 +58,32 @@ public class PaymentController {
      * @param params 綠界回傳的參數
      * @return 處理結果訊息
      */
-    @PostMapping("/callback")
-    public ResponseEntity<String> handlePaymentCallback(@RequestParam Map<String, String> params) {
-    	
-    	// 處理回傳的付款結果
-        boolean isSuccess = paymentService.handlePaymentReturn(params);
+    	  
+     	@PostMapping("/callback")
+    public ResponseEntity<String> handlePaymentCallback(@RequestParam Hashtable<String, String> params) {
+     		System.out.println("測試callback");
+     		try {
+            // 驗證回傳資料的 CheckMacValue 是否正確
+            boolean isValid = paymentService.validateCheckMacValue(params);
 
-        // 根據付款處理結果回應不同的訊息
-        if (isSuccess) {
-            // 付款成功
-            return ResponseEntity.ok("付款成功！");
-        } else {
-            // 付款失敗
-        	return ResponseEntity.badRequest().body("付款失敗！");
+            if (!isValid) {
+                // 驗證失敗，回應錯誤訊息
+                return ResponseEntity.badRequest().body("回傳資料驗證失敗！");
+            }
+
+            // 驗證通過後，處理支付回調
+            boolean isSuccess = paymentService.handlePaymentReturn(params);
+
+            if (isSuccess) {
+                // 付款成功
+                return ResponseEntity.ok("付款成功！");
+            } else {
+                // 付款失敗
+                return ResponseEntity.badRequest().body("付款失敗！");
+            }
+        } catch (Exception e) {
+            // 任何異常處理
+            return ResponseEntity.status(500).body("處理回傳時發生錯誤：" + e.getMessage());
         }
     }
 }
