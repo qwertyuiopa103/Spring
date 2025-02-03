@@ -5,11 +5,13 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import ispan.caregiver.model.CaregiverBean;
 import ispan.user.model.UserBean;
+import jakarta.transaction.Transactional;
 
 
 public interface OrderRepository extends JpaRepository<OrderBean, Integer> {
@@ -49,6 +51,22 @@ public interface OrderRepository extends JpaRepository<OrderBean, Integer> {
     
     @Query("SELECT COUNT(o) FROM OrderBean o ")
     long countOrderBean();
+    //根據MerchantTradeNo改變訂單狀態
+    @Modifying
+    @Transactional
+    @Query("UPDATE OrderBean o SET o.status = :status WHERE o.MerchantTradeNo = :merchantTradeNo")
+    int updateOrderStatusByMerchantTradeNo(String merchantTradeNo, String status);
+    //根據MerchantTradeNo改變付款方式
+        @Modifying
+        @Transactional
+        @Query("UPDATE OrderBean o SET o.paymentMethod = :paymentMethod WHERE o.MerchantTradeNo = :merchantTradeNo")
+        int updatePaymentMethodByMerchantTradeNo(String merchantTradeNo, String paymentMethod);
+      //根據MerchantTradeNo改變TradeNo
+        @Modifying
+        @Query("UPDATE OrderBean o SET o.TradeNo = :tradeNo WHERE o.MerchantTradeNo = :merchantTradeNo")
+        int updateTradeNoByMerchantTradeNo(String merchantTradeNo, String tradeNo);
+    }
+	
 
 
-}
+

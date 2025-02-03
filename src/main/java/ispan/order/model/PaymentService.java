@@ -6,12 +6,8 @@ import org.springframework.stereotype.Service;
 import ecpay.payment.integration.AllInOne;
 import ecpay.payment.integration.domain.AioCheckOutALL;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Map;
 import java.util.UUID;
@@ -57,11 +53,11 @@ public class PaymentService {
         obj.setItemName("看護服務 " + orderId);
 
         // 設置回傳 URL
-        obj.setReturnURL("http://localhost:8080/api/payment/callback");
+        obj.setReturnURL("https://47e4-111-249-15-54.ngrok-free.app/api/payment/callback");
         obj.setClientBackURL("http://localhost:5173/#/home");
 
         // 不需要額外付款資訊
-        obj.setNeedExtraPaidInfo("N");
+        obj.setNeedExtraPaidInfo("Y");
 
         // 生成綠界支付表單
         String form = all.aioCheckOut(obj, null);
@@ -69,25 +65,36 @@ public class PaymentService {
         try {
         	int orderIdInt = Integer.parseInt(orderId);
             //orderService.updateOrderStatusById(orderIdInt, "付款完成");
-            orderService.updatePaymentMethodByOrderId(orderIdInt,"信用卡" );
-            orderService.updateTradeNo(orderIdInt, uuId);
+            //orderService.updatePaymentMethodByOrderId(orderIdInt,"信用卡" );
+            orderService.updateMerchantTradeNo(orderIdInt, uuId);
 		} catch (Exception e) {
 			// TODO: handle exception
 		}
         
         return form;
     }
-
+    // 付款方式轉換方法
+    public String convertPaymentMethod(String PaymentMethod) {
+        switch (PaymentMethod) {
+            case "Credit_CreditCard":
+                return "信用卡";
+//            case "ATM":
+//                return "ATM";
+//            case "WebATM":
+//                return "WebATM";
+//            case "Alipay":
+//                return "支付寶";
+            default:
+                return "未知";
+        }
+    }
     /**
      * 驗證回傳資料的 CheckMacValue 是否正確
      */
-    public boolean validateCheckMacValue(Hashtable<String, String> params) {
-        try {
-            return all.compareCheckMacValue(params);
-        } catch (Exception e) {
-            System.out.println("驗證 CheckMacValue 時發生錯誤: " + e.getMessage());
-            return false;
-        }
+ // 驗證 CheckMacValue
+    public boolean validateCheckMacValue(Map<String, String> params) {
+        Hashtable<String, String> dict = new Hashtable<>(params);
+        return all.compareCheckMacValue(dict);
     }
     /**
      * 處理綠界金流回傳的付款結果
@@ -95,47 +102,32 @@ public class PaymentService {
      * @param params 回傳的參數
      * @return 是否處理成功
      */
-    public boolean handlePaymentReturn(Hashtable<String, String> params) {
-        System.out.println("收到支付回調: " + params);
+    public boolean handlePaymentReturn(Map<String, String> params) {
+    	System.out.println("開始處理支付回調");
         
-        if (!params.containsKey("RtnCode") || !params.containsKey("TradeDesc")) {
-            System.out.println("缺少必要參數！");
-            return false;
-        }
-
-        // 驗證 CheckMacValue
-        if (!validateCheckMacValue(params)) {
-            System.out.println("CheckMacValue 驗證失敗！");
-            return false;
-        }
-
-        String tradeStatus = params.get("RtnCode");
-        String tradeDesc = params.get("TradeDesc");
-        String tradeMessage = params.get("RtnMsg");
-
         try {
-            // 從 TradeDesc 中解析訂單編號
-            String orderIdStr = tradeDesc.replace("訂單編號：", "");
-            int orderId = Integer.parseInt(orderIdStr);
-            System.out.println("處理的訂單 ID：" + orderId);
-
-            // 判斷付款狀態
-            if ("1".equals(tradeStatus)) {
-                System.out.println("付款完成：" + tradeMessage);
-                // 更新訂單狀態為「付款完成」
-                boolean updated = orderService.updateOrderStatusById(orderId, "付款完成");
-                if (updated) {
-                    System.out.println("訂單狀態已更新為付款完成！");
-                } else {
-                    System.out.println("更新訂單狀態時發生錯誤！");
+            String merchantTradeNo = params.get("MerchantTradeNo");
+            String rtnCode = params.get("RtnCode");
+            String PaymentMethod = params.get("PaymentType");
+            System.out.println("PaymentMethod:"+PaymentMethod);
+            String TradeNo = params.get("TradeNo");
+            // 交易成功
+            if ("1".equals(rtnCode)) {
+            	String convertedPaymentMethod = convertPaymentMethod(PaymentMethod);
+                // 根據 MerchantTradeNo 查找訂單並更新狀態
+                try {
+                    orderService.updateOrderStatusBymerchantTradeNo(merchantTradeNo, "付款完成");
+                    orderService.updatePaymentMethodBymerchantTradeNo(merchantTradeNo, convertedPaymentMethod);
+                    orderService.updateTradeNoByMerchantTradeNo(merchantTradeNo, TradeNo);
+                    return true;
+                } catch (Exception e) {
+                    return false;
                 }
-                return true;
             } else {
-                System.out.println("付款失敗：" + tradeMessage);
                 return false;
             }
+            
         } catch (Exception e) {
-            System.out.println("處理回傳時發生錯誤：" + e.getMessage());
             return false;
         }
     }

@@ -13,8 +13,6 @@ import ispan.user.model.UserRepository;
 public class OrderEmailService {
 	@Autowired
     private JavaMailSender mailSender;
-	@Autowired
-	private UserRepository userRepository;
 	    @Autowired
 	    private OrderRepository orderRepository;
 

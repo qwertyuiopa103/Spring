@@ -8,6 +8,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import ecpay.payment.integration.AllInOne;
+
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Map;
@@ -59,33 +63,31 @@ public class PaymentController {
      * @return 處理結果訊息
      */
     	  
-     	@PostMapping("/callback")
-    public ResponseEntity<String> handlePaymentCallback(@RequestParam Hashtable<String, String> params) {
-     		System.out.println("測試callback");
-     		try {
-            // 驗證回傳資料的 CheckMacValue 是否正確
+    @PostMapping("/callback")
+    public ResponseEntity<String> handlePaymentCallback(@RequestParam Map<String, String> params) {
+        System.out.println("收到回調的參數: " + params);
+
+        try {
+            // 驗證 CheckMacValue
             boolean isValid = paymentService.validateCheckMacValue(params);
 
             if (!isValid) {
-                // 驗證失敗，回應錯誤訊息
-                return ResponseEntity.badRequest().body("回傳資料驗證失敗！");
+                System.out.println("CheckMacValue 驗證失敗");
+                return ResponseEntity.ok("0|ErrorMessage");
             }
 
-            // 驗證通過後，處理支付回調
-            boolean isSuccess = paymentService.handlePaymentReturn(params);
+            // 驗證成功，處理支付回調邏輯
+            paymentService.handlePaymentReturn(params);
+            return ResponseEntity.ok("1|OK");
 
-            if (isSuccess) {
-                // 付款成功
-                return ResponseEntity.ok("付款成功！");
-            } else {
-                // 付款失敗
-                return ResponseEntity.badRequest().body("付款失敗！");
-            }
         } catch (Exception e) {
-            // 任何異常處理
-            return ResponseEntity.status(500).body("處理回傳時發生錯誤：" + e.getMessage());
+            System.out.println("處理回調時發生錯誤：" + e.getMessage());
+            return ResponseEntity.ok("0|" + e.getMessage());
         }
     }
+
+
+
 }
 
     

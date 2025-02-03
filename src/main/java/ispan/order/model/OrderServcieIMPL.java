@@ -8,7 +8,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import ispan.caregiver.model.CaregiverBean;
-import ispan.order.dto.OrderStatusUpdateDTO;
 import ispan.orderCancel.model.OrderCancelBean;
 import ispan.orderCancel.model.OrderCancelRepository;
 import ispan.user.model.UserBean;
@@ -174,6 +173,7 @@ public class OrderServcieIMPL implements OrderService {
         Optional<OrderBean> order = orderRepository.findById(orderId);
         return order.map(OrderBean::getCancellation).map(OrderCancelBean::getCancellationId).orElse(null);
     }
+    //根據訂單ID新增交易號碼(綠界的)
     @Override
     public OrderBean updateTradeNo(int orderId, String tradeNo) {
         // 查訂單
@@ -183,5 +183,36 @@ public class OrderServcieIMPL implements OrderService {
         // 保存並返回更新後的訂單
         return orderRepository.save(order);
     }
-}
+    
+  //根據訂單ID新增交易號碼(自己產生的UUID)
+    @Override
+    public OrderBean updateMerchantTradeNo(int orderId, String MerchantTradeNo) {
+        // 查訂單
+        OrderBean order = orderRepository.findByOrderId(orderId);
+        // 更新 TradeNo
+        order.setMerchantTradeNo(MerchantTradeNo); 
+        // 保存並返回更新後的訂單
+        return orderRepository.save(order);
+    }
+    @Override
+    public void updateOrderStatusBymerchantTradeNo(String merchantTradeNo, String status) {
+        int updatedRows = orderRepository.updateOrderStatusByMerchantTradeNo(merchantTradeNo, status);
+        if (updatedRows == 0) {
+            // 如果沒有更新任何行，可以選擇拋出異常或做其他處理
+            throw new RuntimeException("No order found with the given merchantTradeNo");
+        }
+    }
+    @Override
+    public void updatePaymentMethodBymerchantTradeNo(String merchantTradeNo, String paymentMethod) {
+        orderRepository.updatePaymentMethodByMerchantTradeNo(merchantTradeNo, paymentMethod);
+    }
+    @Override
+    public int updateTradeNoByMerchantTradeNo(String merchantTradeNo, String tradeNo) {
+        // 只更新 TradeNo
+        return orderRepository.updateTradeNoByMerchantTradeNo(merchantTradeNo, tradeNo);
+    }
+
+   
+    }
+
 
