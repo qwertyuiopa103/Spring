@@ -23,6 +23,8 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 public class ChatService {
@@ -118,7 +120,7 @@ public class ChatService {
 				地區：若使用者提到 "台北"、"新北"、"桃園"、"高雄" 等，就放在 "regions" 裡。
 				若沒提到地區，就回空陣列 []
 
-				最終請務必只回傳 JSON 格式，如：
+				最終請務必只回傳 JSON 格式，範例如下，**請勿額外回覆其他任何內容（包括解釋、程式碼或其他文字）**：
 				{
 				   "level": "高階看護人員",
 				   "regions": ["台北","新北"]
@@ -145,42 +147,50 @@ public class ChatService {
 	}
 
 	// 從字串中擷取第一個 '{' 到最後一個 '}' 
-	private String extractJson(String text) {
-	    // 找最外層 '{'
-	    int start = text.indexOf('{');
-	    // 找最後一個 '}'
-	    int end = text.lastIndexOf('}');
-	    // 如果找不到，或位置反轉，則回 null
-	    if (start == -1 || end == -1 || start > end) {
-	        return null;
+	public String extractJson(String text) {
+	    Pattern pattern = Pattern.compile("\\{.*?\\}", Pattern.DOTALL);
+	    Matcher matcher = pattern.matcher(text);
+	    if (matcher.find()) {
+	        return matcher.group();
 	    }
-	    // 取 substring
-	    return text.substring(start, end + 1).trim();
+	    return null;
 	}
 
 	/**
 	 * 查詢資料庫 & 組裝回覆
 	 */
 	private String buildCaregiverReply(AiAnswer parsed) {
-		String caretakerLevel = validateLevelOrDefault(parsed.getLevel());
-		List<String> caretakerRegions = parsed.getRegions();
+	    // 驗證並取得看護階級
+	    String caretakerLevel = validateLevelOrDefault(parsed.getLevel());
+	    // 取得地區列表（List<String>）
+	    List<String> caretakerRegions = parsed.getRegions();
 
-		List<CaregiverBean> caregivers = fetchCaregiversMultipleRegions(caretakerLevel, caretakerRegions);
-		if (caregivers.isEmpty()) {
-			return "目前找不到符合您需求(階級:" + caretakerLevel + ", 地區:" + caretakerRegions + ")的看護。";
-		}
+	    // 根據階級和地區查詢看護資料
+	    List<CaregiverBean> caregivers = fetchCaregiversMultipleRegions(caretakerLevel, caretakerRegions);
+	    if (caregivers.isEmpty()) {
+	        return "目前找不到符合您需求(階級:" + caretakerLevel + ", 地區:" + caretakerRegions + ")的看護。";
+	    }
 
-		StringBuilder sb = new StringBuilder("以下是為您找到的看護資訊：\n");
-		for (CaregiverBean c : caregivers) {
-			String areaName = resolveAreaName(c.getServiceArea());
-			sb.append(String.format("編號:%d, 姓名:%s, 階級:%s, 地區:%s, 年齡:%d, 性別:%s\n", c.getCaregiverNO(),
-					c.getUser() != null ? c.getUser().getUserName() : "無姓名", c.getServices(), areaName,
-					c.getCaregiverAge(), c.getCaregiverGender()));
-		}
-		sb.append("若需要更多資訊，請再告知我！");
-		return sb.toString();
+	    StringBuilder sb = new StringBuilder("以下是為您找到的看護資訊：\n");
+	    int option = 1;
+
+	    for (CaregiverBean c : caregivers) {
+	    	
+	        // 取得服務區域的可讀名稱（例如 "台北, 新北, 高雄"）
+	        String areaName = resolveAreaName(c.getServiceArea());
+	        sb.append(String.format("選項%d 姓名: %s, 階級: %s, 地區: %s, 年齡: %d, 性別: %s\n",
+	            option,
+	            (c.getUser() != null ? c.getUser().getUserName() : "無姓名"),
+	            c.getServices(),
+	            areaName,
+	            c.getCaregiverAge(),
+	            c.getCaregiverGender()
+	        ));
+	        option++;
+	    }
+	    sb.append("若需要更多資訊，請再告知我！");
+	    return sb.toString();
 	}
-
 	/**
 	 * 如果 AI 回傳的階級不在 (初階/中階/高階/專業) 之內，就給預設
 	 */

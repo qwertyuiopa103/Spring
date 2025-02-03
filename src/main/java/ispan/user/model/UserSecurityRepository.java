@@ -17,8 +17,8 @@ public interface UserSecurityRepository extends JpaRepository<UserSecurityBean, 
 
 	 @Transactional
 	 @Modifying
-	 @Query("UPDATE UserSecurityBean u SET u.userDeleted = :userDeleted WHERE u.userID = :userID")
-	 int updateUserDeleted(@Param("userDeleted") boolean userDeleted, @Param("userID") String userID);
+	 @Query("UPDATE UserSecurityBean u SET u.userDeleted = :userDeleted, u.userDeletedTime = :userDeletedTime WHERE u.userID = :userID")
+	 int updateUserDeleted(@Param("userDeleted") boolean userDeleted,@Param("userDeletedTime") Timestamp userDeletedTime, @Param("userID") String userID);
 	 
 	 @Transactional
 	 @Modifying

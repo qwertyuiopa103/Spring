@@ -130,7 +130,7 @@ public class UserServiceImpl implements UserService {
 	                if (countOrderstatuscaregiverNO == 0 && countReservestatuscaregiverNo == 0) {
 	                    // 看護無未完成訂單或預約，標記用戶刪除
 	                    userBean.getUserSecurity().setUserDeleted(true);
-	                    userSecurityRepository.updateUserDeleted(true, userID);
+	                    userSecurityRepository.updateUserDeleted(true,new Timestamp(System.currentTimeMillis()), userID);
 	                } else {
 	                    // 看護有未完成的訂單或預約
 	                    throw new SoftDeleteException("身為看護尚有未完成的預約或訂單");
@@ -138,7 +138,7 @@ public class UserServiceImpl implements UserService {
 	            } else {
 	                // 如果沒有對應的看護編號，直接標記用戶刪除
 	                userBean.getUserSecurity().setUserDeleted(true);
-	                userSecurityRepository.updateUserDeleted(true, userID);
+	                userSecurityRepository.updateUserDeleted(true,new Timestamp(System.currentTimeMillis()), userID);
 	            }
 
 	        } else {

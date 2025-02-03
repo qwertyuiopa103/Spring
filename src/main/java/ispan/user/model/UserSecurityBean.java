@@ -65,6 +65,9 @@ public class UserSecurityBean {
 	@Column(name = "userDeleted",insertable = false)
 	private boolean userDeleted;
 	
+	@Column(name = " userDeletedTime")
+	private Timestamp userDeletedTime;
+	
 	@Column(name = "userResetPasswordToken ")
 	private String userResetPasswordToken ;
 	
