@@ -172,7 +172,10 @@ public class CaregiverController {
    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
    public ResponseEntity<?> deleteCaregiver(@PathVariable Integer caregiverNO) {
        try {
+    	   CaregiverBean byId = caregiverService.findById(caregiverNO);
+    	   byId.getUser().setUserRole("ROLE_USER");
            caregiverService.deleteCaregiver(caregiverNO);
+           
            return ResponseEntity.ok("刪除成功");
        } catch (Exception e) {
            return ResponseEntity.badRequest().body("刪除失敗: " + e.getMessage());
