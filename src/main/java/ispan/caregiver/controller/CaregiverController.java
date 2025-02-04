@@ -1,267 +1,206 @@
 package ispan.caregiver.controller;
 
-import java.io.IOException;
-import java.util.Base64;
+import java.beans.PropertyDescriptor;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.ui.Model;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import ispan.caregiver.model.CaregiverBean;
-
-import ispan.caregiver.service.CaregiverServiceImpl;
+import ispan.caregiver.model.CertifiPhotoBean;
+import ispan.caregiver.model.ServiceAreaBean;
+import ispan.caregiver.service.CaregiverService;
+import ispan.caregiver.service.CertifiPhotoService;
 import ispan.user.model.UserBean;
-import jakarta.servlet.http.HttpServletRequest;
-
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+import ispan.user.tools.CommonTool;
 
 @RestController
 @RequestMapping("/api/caregiver")
-@CrossOrigin(origins = "http://localhost:5173")
 public class CaregiverController {
-
+	
+	// 改為
 	@Autowired
-	private CaregiverServiceImpl caregiverService;
+	private CaregiverService caregiverService;
+	   @Autowired
+	   private CertifiPhotoService certifiPhotoService;  // 先加入注入
 
-//	@Autowired
-//	public caregiverController(caregiverService caregiverService) {
-//		caregiverService = caregiverService;
-//	}
-
-	// http://localhost:8080/caregiver/caregiverAll
-	  // 查詢所有護理人員
-	@GetMapping("/FindAllCaregiver")
-	public List<CaregiverBean> findAllCaregiver(Model model) {
-		List<CaregiverBean> caregiver = caregiverService.findAllCaregivers();
-//		model.addAttribute("caregivers", caregiver);
-		System.out.println(caregiver.size());
-		return caregiver;
-	}
-
-    
-    //
-
-	@GetMapping(path = "/FindCaregiver", produces = "application/json")@ResponseBody
-    public ResponseEntity<?> findCaregiver(@RequestParam("caregiverNO") Integer caregiverNO) {
-        System.out.println("Received caregiverNO: " + caregiverNO); // 日誌輸出接收到的參數
-
-        try {
-            // 單表查詢，只根據 caregiverNO 進行操作
-            CaregiverBean caregiver = caregiverService.findCaregiver(caregiverNO);
-
-            if (caregiver != null) {
-                return ResponseEntity.ok(caregiver); // 查詢成功，返回 JSON 格式數據
-            } else {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(Map.of("error", "未找到相關護理人員")); // 查無資料，返回錯誤訊息
-            }
-        } catch (Exception e) {
-            System.err.println("Error occurred while finding caregiver: " + e.getMessage()); // 錯誤日誌輸出
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "查詢失敗：" + e.getMessage())); // 返回伺服器錯誤訊息
-        }
-    }
-
-	
-	@GetMapping("/GetThatUpdateCaregiver")@ResponseBody
-	public String getThatUpdateCaregiver(@RequestParam("caregiverNO") Integer caregiverNO, Model model) {
-
-		CaregiverBean caregiver = caregiverService.findCaregiver(caregiverNO);
-
-		model.addAttribute("caregiver", caregiver);
-
-		return "caregiverView/UpdateCaregiver";
+	@GetMapping("/CGstatus/{CGstatus}")
+	@PreAuthorize("hasAuthority('ROLE_ADMIN')") 
+	public ResponseEntity<?> getCaregiversByCGStatus(@PathVariable String CGstatus) {
+		try {
+			List<CaregiverBean> caregivers = caregiverService.findByCGStatus(CGstatus);
+			return ResponseEntity.ok(caregivers);
+		} catch (Exception e) {
+			return ResponseEntity.badRequest().body("篩選資料失敗: " + e.getMessage());
+		}
 	}
 	
-	@PostMapping("/InsertCaregiver") 
-	public ResponseEntity<?> insertCaregiver(@RequestBody CaregiverBean caregiver) {
-	    try {
-	        // 創建新的 CaregiverBean 實例
-//	        CaregiverBean caregiver = new CaregiverBean();
-//	        
-//	        // 設置 UserBean (只設置 userID)
-//	        UserBean user = new UserBean();
-//	        user.setUserID(formData.get("userID")); // 只需要設置關聯的 userID
-//	        caregiver.setUser(user);
-//	        System.out.println(caregiver.getUser().getUserID());
-//	        // 設置 Caregiver 表的欄位
-//	        caregiver.setCaregiverGender(formData.get("caregiverGender"));
-//	        caregiver.setCaregiverAge(Integer.parseInt(formData.get("caregiverAge")));
-//	        caregiver.setExpYears(Integer.parseInt(formData.get("expYears")));
-//	        caregiver.setEduExperience(formData.get("eduExperience"));
-//	        caregiver.setHourlyRate(Double.parseDouble(formData.get("hourlyRate")));
-	    	
-	        CaregiverBean savedCaregiver = caregiverService.insertCaregiver(caregiver);
-	        return ResponseEntity.ok()
-	            .body(Map.of("message", "新增成功", "caregiver", savedCaregiver));
-	    } catch (Exception e) {
-	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-	            .body(Map.of("error", "新增失敗：" + e.getMessage()));
-	    }
-	}
-	
-
-//	@PostMapping("/InsertCaregiver") 
-//	public ResponseEntity<?> insertCaregiver(@RequestParam Map<String, String> formData,
-//	                                       @RequestParam(required = false) MultipartFile caregiverPicture) {
-//	    try {
-//	        // 創建新的 CaregiverBean 實例
-//	        CaregiverBean caregiver = new CaregiverBean();
-//	        UserBean user = new UserBean();
-//	        user.setUserID(formData.get("userID"));
-//	        caregiver.setUser(user);
-//	        caregiver.setExpYears(Integer.parseInt(formData.get("expYears")));
-//	        caregiver.setEduExperience(formData.get("eduExperience"));
-//	        caregiver.setHourlyRate(Double.parseDouble(formData.get("hourlyRate")));
-//	        
-//	        // 手動設置各個欄位
-////	        caregiver.setCaregiverName(formData.get("caregiverName"));
-////	        caregiver.setCaregiverPassword(formData.get("caregiverPassword"));
-////	        caregiver.setCaregiverGender(formData.get("caregiverGender"));
-////	        caregiver.setCaregiverAge(Integer.parseInt(formData.get("caregiverAge")));
-////	        caregiver.setExpYears(Integer.parseInt(formData.get("expYears")));
-////	        caregiver.setEduExperience(formData.get("eduExperience"));
-////	        caregiver.setCaregiverPhone(formData.get("caregiverPhone"));
-////	        caregiver.setCaregiverEmail(formData.get("caregiverEmail"));
-////	        caregiver.setCaregiverTWID(formData.get("caregiverTWID"));
-////	        caregiver.setCaregiverAddress(formData.get("caregiverAddress"));
-////	        caregiver.setHourlyRate(Double.parseDouble(formData.get("hourlyRate")));
-//	        
-//	        // 確保新增時不帶入 ID
-//	        caregiver.setCaregiverNO(0);
-//
-//	        CaregiverBean savedCaregiver = caregiverService.insertCaregiver(caregiver, caregiverPicture);
-//	        return ResponseEntity.ok()
-//	            .body(Map.of("message", "新增成功", "caregiver", savedCaregiver));
-//	    } catch (Exception e) {
-//	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-//	            .body(Map.of("error", "新增失敗：" + e.getMessage()));
-//	    }
-//	}
-//	
-	@PutMapping("/UpdateCaregiver")
-	public ResponseEntity<?> updateCaregiver(@RequestBody CaregiverBean caregiver) {
-	    try {
-	        // 先查找現有的護工資料
-	        CaregiverBean existingCaregiver = caregiverService.findCaregiver(caregiver.getCaregiverNO());
-	        if (existingCaregiver == null) {
-	            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-	                    .body(Map.of("error", "更新失敗，未找到護理人員"));
-	        }
-
-	        // 只更新 CAREGIVER 表的欄位
-	        existingCaregiver.setCaregiverGender(caregiver.getCaregiverGender());
-	        existingCaregiver.setCaregiverAge(caregiver.getCaregiverAge());
-	        existingCaregiver.setExpYears(caregiver.getExpYears());
-	        existingCaregiver.setEduExperience(caregiver.getEduExperience());
-	        existingCaregiver.setHourlyRate(caregiver.getHourlyRate());
-
-	        // 保存更新
-	        CaregiverBean updatedCaregiver = caregiverService.updateCaregiver(existingCaregiver);
-	        return ResponseEntity.ok()
-	            .body(Map.of("message", "更新成功", "caregiver", updatedCaregiver));
-	    } catch (Exception e) {
-	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-	                .body(Map.of("error", "更新失敗：" + e.getMessage()));
-	    }
+	@GetMapping("/pending-count")
+	@PreAuthorize("hasAuthority('ROLE_ADMIN')")
+	public ResponseEntity<Map<String, Object>> getPendingCount() {
+		Map<String, Object> response = new HashMap<>();
+		response.put("count", caregiverService.countPendingApplications());
+		response.put("applications", caregiverService.findByCGStatus("PENDING"));
+		return ResponseEntity.ok(response);
 	}
 	
 	
-	
-	
-//	@PutMapping("/UpdateCaregiver")
-//	public ResponseEntity<?> updateCaregiver(@RequestBody CaregiverBean caregiver) {
-//	    try {
-//	        // 使用服務層查詢目標對象
-//	        CaregiverBean existingCaregiver = caregiverService.findCaregiver(caregiver.getCaregiverNO());
-//	        if (existingCaregiver == null) {
-//	            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-//	                    .body(Map.of("error", "更新失敗，未找到護理人員"));
-//	        }
-//
-//	        // 保留原有ID
-//	        int originalId = existingCaregiver.getCaregiverNO();
-//	        
-//	        // 複製所有新的屬性值到現有對象
-//	        BeanUtils.copyProperties(caregiver, existingCaregiver);
-//	        
-//	        // 確保ID不被更改
-//	        existingCaregiver.setCaregiverNO(originalId);
-//
-//	        // 保存更新後的數據
-//	        CaregiverBean updatedCaregiver = caregiverService.updateCaregiver(existingCaregiver, null);
-//	        return ResponseEntity.ok(Map.of("message", "更新成功", "caregiver", updatedCaregiver));
-//	    } catch (Exception e) {
-//	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-//	                .body(Map.of("error", "更新失敗：" + e.getMessage()));
-//	    }
-//	}
-	
-	
 
-//    // 更新護理人員（通過 JSON 內的 caregiverNO 確認更新對象）
-//    @PutMapping("/UpdateCaregiver")
-//    public ResponseEntity<?> updateCaregiver(@RequestBody CaregiverBean caregiver) {
-//        try {
-//            // 使用服務層查詢目標對象，並更新其他屬性
-//            CaregiverBean existingCaregiver = caregiverService.findCaregiver(caregiver.getCaregiverNO());
-//            if (existingCaregiver == null) {
-//                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-//                        .body(Map.of("error", "更新失敗，未找到護理人員"));
-//            }
-//
-//            // 更新現有對象的屬性
-//            existingCaregiver.setCaregiverName(caregiver.getCaregiverName());
-//            existingCaregiver.setCaregiverPassword(caregiver.getCaregiverPassword());
-//            existingCaregiver.setCaregiverGender(caregiver.getCaregiverGender());
-//            existingCaregiver.setCaregiverAge(caregiver.getCaregiverAge());
-//            existingCaregiver.setExpYears(caregiver.getExpYears());
-//            existingCaregiver.setEduExperience(caregiver.getEduExperience());
-//            existingCaregiver.setCaregiverPhone(caregiver.getCaregiverPhone());
-//            existingCaregiver.setCaregiverEmail(caregiver.getCaregiverEmail());
-//            existingCaregiver.setCaregiverTWID(caregiver.getCaregiverTWID());
-//            existingCaregiver.setCaregiverAddress(caregiver.getCaregiverAddress());
-//            existingCaregiver.setHourlyRate(caregiver.getHourlyRate());
-//
-//            // 保存更新後的數據
-//            CaregiverBean updatedCaregiver = caregiverService.updateCaregiver(existingCaregiver, null);
-//            return ResponseEntity.ok(Map.of("message", "更新成功", "caregiver", updatedCaregiver));
-//        } catch (Exception e) {
-//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-//                    .body(Map.of("error", "更新失敗：" + e.getMessage()));
-//        }
-//    }
+   @GetMapping("/findAllCaregiver")
+   @PreAuthorize("hasAuthority('ROLE_ADMIN')")  
+   public ResponseEntity<?> findAllCaregiver() {
+       return ResponseEntity.ok(caregiverService.findAllCaregivers());
+   }
+   
+ 
+   
+   @PostMapping("/approve/{caregiverNO}")
+   @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+   public ResponseEntity<?> approveCaregiver(@PathVariable Integer caregiverNO) {
+       try {
+           caregiverService.approveCaregiver(caregiverNO);
+           return ResponseEntity.ok("審核通過");
+       } catch (Exception e) {
+           return ResponseEntity.badRequest().body(e.getMessage());
+       }
+   }
 
-    // 刪除護理人員
-    @DeleteMapping("/DeleteCaregiver")
-    public ResponseEntity<?> deleteCaregiver(@RequestParam("caregiverNO") Integer caregiverNO) {
-        try {
-            caregiverService.deleteCaregiver(caregiverNO);
-            return ResponseEntity.ok(Map.of("message", "刪除成功"));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "刪除失敗：" + e.getMessage()));
-        }
-    }
+   @PostMapping("/reject/{caregiverNO}")
+   @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+   public ResponseEntity<?> rejectCaregiver(
+           @PathVariable Integer caregiverNO,
+           @RequestBody Map<String, String> request) {
+       try {
+           String reason = request.get("reason");
+           if (reason == null || reason.trim().isEmpty()) {
+               return ResponseEntity.badRequest().body("必須提供退回原因");
+           }
+           caregiverService.rejectCaregiver(caregiverNO, reason);
+           return ResponseEntity.ok("已退回申請");
+       } catch (Exception e) {
+           return ResponseEntity.badRequest().body(e.getMessage());
+       }
+   }
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+   //INSERT
+   @PostMapping("/insert")
+   @PreAuthorize("hasAuthority('ROLE_USER')")
+   public ResponseEntity<?> insertCaregiver(
+       @RequestBody CaregiverBean caregiver) {
+       System.out.println(caregiver);
+       CaregiverBean savedCaregiver = caregiverService.insertCaregiver(caregiver);
+       return ResponseEntity.ok(savedCaregiver);
+   }
+   
+//   //UPDATE
+//   @PutMapping("/update")
+//   @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_CAREGIVER')")
+//   public ResponseEntity<?> updateCaregiver(
+//		    @RequestParam("caregiverData") String caregiverDataStr,
+//		    @RequestParam(value = "photos", required = false) MultipartFile[] photos
+//		) {
+//		    try {
+//		        // 將 JSON 字串轉換為 CaregiverBean 對象
+//		        ObjectMapper mapper = new ObjectMapper();
+//		        CaregiverBean caregiver = mapper.readValue(caregiverDataStr, CaregiverBean.class);
+//		        
+//		        // 處理新上傳的照片
+//		        if (photos != null && photos.length > 0) {
+//		            CertifiPhotoBean certifiPhoto = caregiver.getCertifiPhoto();
+//		            if (certifiPhoto == null) {
+//		                certifiPhoto = new CertifiPhotoBean();
+//		            }
+//		            
+//		            // 獲取當前照片數量
+//		            int currentPhotoCount = 0;
+//		            if (certifiPhoto.getPhoto1() != null) currentPhotoCount++;
+//		            if (certifiPhoto.getPhoto2() != null) currentPhotoCount++;
+//		            if (certifiPhoto.getPhoto3() != null) currentPhotoCount++;
+//		            if (certifiPhoto.getPhoto4() != null) currentPhotoCount++;
+//		            if (certifiPhoto.getPhoto5() != null) currentPhotoCount++;
+//		            
+//		            // 根據可用空間添加新照片
+//		            for (int i = 0; i < photos.length && currentPhotoCount < 5; i++) {
+//		                byte[] photoBytes = photos[i].getBytes();
+//		                switch (currentPhotoCount) {
+//		                    case 0: certifiPhoto.setPhoto1(photoBytes); break;
+//		                    case 1: certifiPhoto.setPhoto2(photoBytes); break;
+//		                    case 2: certifiPhoto.setPhoto3(photoBytes); break;
+//		                    case 3: certifiPhoto.setPhoto4(photoBytes); break;
+//		                    case 4: certifiPhoto.setPhoto5(photoBytes); break;
+//		                }
+//		                currentPhotoCount++;
+//		            }
+//		            
+//		            caregiver.setCertifiPhoto(certifiPhoto);
+//		        }
+//		        
+//		        CaregiverBean updatedCaregiver = caregiverService.updateCaregiver(caregiver);
+//		        return ResponseEntity.ok()
+//		                .body(Map.of("message", "更新成功", 
+//		                            "caregiver", updatedCaregiver));
+//		    } catch (Exception e) {
+//		        return ResponseEntity.badRequest().body("更新失敗: " + e.getMessage());
+//		    }
+//		}
+   @PutMapping("/update")
+   @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_CAREGIVER')")
+   public ResponseEntity<?> updateCaregiver(@RequestBody CaregiverBean caregiver) {
+       try {
+           CaregiverBean updatedCaregiver = caregiverService.updateCaregiver(caregiver);
+           return ResponseEntity.ok()
+                   .body(Map.of("message", "更新成功", 
+                               "caregiver", updatedCaregiver));
+       } catch (Exception e) {
+           return ResponseEntity.badRequest().body("更新失敗: " + e.getMessage());
+       }
+   }
+   
+   //DELETE
+   @DeleteMapping("/{caregiverNO}")
+   @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+   public ResponseEntity<?> deleteCaregiver(@PathVariable Integer caregiverNO) {
+       try {
+           caregiverService.deleteCaregiver(caregiverNO);
+           return ResponseEntity.ok("刪除成功");
+       } catch (Exception e) {
+           return ResponseEntity.badRequest().body("刪除失敗: " + e.getMessage());
+       }
+   }
+   
+   //FIND A CAREGIVER 
+   @GetMapping("/findCaregiver/{caregiverNO}")
+   @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_CAREGIVER', 'ROLE_USER')")
+   public ResponseEntity<?> findCaregiver(@PathVariable Integer caregiverNO) {
+       try {
+           CaregiverBean caregiver = caregiverService.findById(caregiverNO);
+           return ResponseEntity.ok(caregiver);
+       } catch (Exception e) {
+           return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                   .body(Map.of("error", "未找到護工資料"));
+       }
+   }
+   
+   @GetMapping("/findByUserId/{userId}")
+   public CaregiverBean findCaregiverByUserId(@PathVariable String userId) {
+	   System.out.println("123!!!!!!!!!");
+	   CaregiverBean caregiver = caregiverService.findCaregiverByUserId(userId);
+	   return caregiver;
+   }
+   
+
+
+  
+
+
 }
-	
-	 
-
-

@@ -1,108 +1,187 @@
 package ispan.caregiver.service;
 
-import java.io.IOException;
-import java.util.Base64;
-import java.util.List;
-import java.util.Optional;
-
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
-
-import ispan.caregiver.model.CaregiverBean;
-import ispan.caregiver.model.CaregiverDTO;
-import ispan.caregiver.model.CaregiverRepository;
+import ispan.caregiver.model.*;
 import ispan.user.model.UserBean;
-import ispan.user.service.UserServiceImpl;
+import ispan.user.model.UserRepository;
+import ispan.user.service.UserEmailService;
+import java.util.List;
+import java.util.Optional;
 
 @Service
 @Transactional
 public class CaregiverServiceImpl implements CaregiverService {
+    @Autowired
+    private CaregiverRepository caregiverRepository;
+    
+    @Autowired 
+    private UserRepository userRepository;
+    
+    @Autowired
+    private UserEmailService emailService;
+    @Autowired
+    private ServiceAreaService serviceAreaService;
+    
+    @Autowired
+    private CertifiPhotoService certifiPhotoService;
+    
+    @Override
+    public List<CaregiverBean> findAllCaregivers() {
+        return caregiverRepository.findAll();
+    }
+    
+    @Override
+    public List<CaregiverBean> findByCGStatus(String CGstatus) {
+        return caregiverRepository.findByCGstatus(CGstatus);
+    }
+    
+    @Override
+    public long countPendingApplications() {
+        return caregiverRepository.countPendingApplications();
+    }
+    
+    @Override
+    @Transactional
+    public void approveCaregiver(Integer caregiverNO) {
+        try {
+            CaregiverBean caregiver = caregiverRepository.findById(caregiverNO)
+                .orElseThrow(() -> new RuntimeException("找不到該護工資料"));
+                
+            // 更新護工狀態
+            caregiver.setCGstatus("APPROVED");
+            caregiverRepository.save(caregiver);
+            
+            // 更新用戶角色
+            UserBean user = caregiver.getUser();
+            user.setUserRole("ROLE_CAREGIVER");
+            userRepository.save(user);
+            
+            try {
+                // 嘗試發送郵件，但即使失敗也不影響狀態更新
+            	
+                emailService.sendApprovalEmail(user.getUserEmail());
+            } catch (Exception e) {
+                // 記錄郵件發送錯誤但不中斷交易
+                e.printStackTrace();
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("審核過程發生錯誤: " + e.getMessage());
+        }
+    }
+    
+    
+    
+    
+    
+    @Override
+    @Transactional
+    public void rejectCaregiver(Integer caregiverNO, String reason) {
+        CaregiverBean caregiver = caregiverRepository.findById(caregiverNO)
+            .orElseThrow(() -> new RuntimeException("找不到該護工資料"));
+            
+        caregiver.setCGstatus("REJECTED");
+        caregiverRepository.save(caregiver);
+        
+        // 發送拒絕通知郵件
+        emailService.sendRejectionEmail(caregiver.getUser().getUserEmail(), reason);
+    }
+    
+    @Override
+    public CaregiverBean findById(Integer caregiverNO) {
+        return caregiverRepository.findById(caregiverNO)
+            .orElseThrow(() -> new RuntimeException("找不到該護工資料"));
+    }
+    
+    
+    @Override
+    public CaregiverBean insertCaregiver(CaregiverBean caregiver) {
+        try {
+            if (caregiver.getUser() == null || caregiver.getUser().getUserID() == null) {
+                throw new RuntimeException("必須提供使用者 ID");
+            }
 
-	@Autowired
-	private UserServiceImpl userService;
+            Optional<UserBean> userOpt = userRepository.findById(caregiver.getUser().getUserID());
+            if (userOpt.isEmpty()) {
+                throw new RuntimeException("找不到對應的使用者");
+            }
 
-	@Autowired
-	private CaregiverRepository caregiverRepository;
+            UserBean user = userOpt.get();
+            caregiver.setUser(user);
+            caregiver.setCGstatus("PENDING");
 
-//	@Autowired
-//	public caregiverService(caregiverRepository caregiverRepository) {
-//		caregiverRepository = caregiverRepository;
-//	}
-	
+            // 處理服務區域
+            if (caregiver.getServiceArea() != null) {
+                ServiceAreaBean newArea = new ServiceAreaBean();
+                BeanUtils.copyProperties(caregiver.getServiceArea(), newArea);
+                ServiceAreaBean savedArea = serviceAreaService.save(newArea);
+                caregiver.setServiceArea(savedArea);
+            }
 
-	public List<CaregiverBean> findAllCaregiver() {
-		return caregiverRepository.findAll();
-	}
+            // 處理證照照片
+            if (caregiver.getCertifiPhoto() != null) {
+                // 從數據庫中獲取已保存的 CertifiPhotoBean
+                CertifiPhotoBean savedPhoto = certifiPhotoService.findById(caregiver.getCertifiPhoto().getCertifiPhotoID());
+//                    .orElseThrow(() -> new RuntimeException("找不到對應的證照照片"));
+                caregiver.setCertifiPhoto(savedPhoto);
+            }
 
-	public CaregiverBean findCaregiver(Integer caregiverNo) {
-		Optional<CaregiverBean> result = caregiverRepository.findById(caregiverNo);
-		if (result.isPresent()) {
-			return result.get();
-		} else {
-			throw new RuntimeException("找不到護工編號: " + caregiverNo);
-		}
-	}
+            return caregiverRepository.save(caregiver);
+            
+        } catch (Exception e) {
+            throw new RuntimeException("建立看護資料失敗: " + e.getMessage());
+        }
+    }
 
-	public CaregiverBean getThatUpdateCaregiver(Integer caregiverNo) {
-		Optional<CaregiverBean> result = caregiverRepository.findById(caregiverNo);
-		return result.get();
-	}
+   
+    
+    @Override
+    @Transactional
+    public CaregiverBean updateCaregiver(CaregiverBean caregiver) {
+        CaregiverBean existing = findById(caregiver.getCaregiverNO());
+        
+        // 更新基本資訊
+        existing.setCaregiverGender(caregiver.getCaregiverGender());
+        existing.setCaregiverAge(caregiver.getCaregiverAge());
+        existing.setExpYears(caregiver.getExpYears());
+        existing.setEducation(caregiver.getEducation());
+        existing.setDaylyRate(caregiver.getDaylyRate());
+        existing.setServices(caregiver.getServices());
+        if (caregiver.getServiceArea() != null) {
+            ServiceAreaBean updatedArea = serviceAreaService.save(caregiver.getServiceArea());
+            existing.setServiceArea(updatedArea);
+        }
 
-	public List<CaregiverBean> findAllCaregivers() {
-		return caregiverRepository.findAll();
-	}
+        // 更新證照照片
+        if (caregiver.getCertifiPhoto() != null) {
+            CertifiPhotoBean existingPhoto = existing.getCertifiPhoto();
+            if (existingPhoto == null) {
+                existingPhoto = new CertifiPhotoBean();
+            }
+            
+            CertifiPhotoBean newPhoto = caregiver.getCertifiPhoto();
+            if (newPhoto.getPhoto1() != null) existingPhoto.setPhoto1(newPhoto.getPhoto1());
+            if (newPhoto.getPhoto2() != null) existingPhoto.setPhoto2(newPhoto.getPhoto2());
+            if (newPhoto.getPhoto3() != null) existingPhoto.setPhoto3(newPhoto.getPhoto3());
+            if (newPhoto.getPhoto4() != null) existingPhoto.setPhoto4(newPhoto.getPhoto4());
+            if (newPhoto.getPhoto5() != null) existingPhoto.setPhoto5(newPhoto.getPhoto5());
+            
+            existing.setCertifiPhoto(existingPhoto);
+        }
 
-//	public CaregiverBean insertCaregiver(CaregiverBean caregiver, MultipartFile caregiverPictureFile)
-//			throws IOException {
-//		if (caregiverPictureFile != null && !caregiverPictureFile.isEmpty()) {
-//			byte[] imageBytes = caregiverPictureFile.getBytes();
-//			String base64Image = Base64.getEncoder().encodeToString(imageBytes);
-//			// 添加 data URI scheme 前綴
-//			base64Image = "data:image/jpeg;base64," + base64Image;
-//			caregiver.setCaregiverPicture(base64Image);
-//		}
-//		return caregiverRepository.save(caregiver);
-//	}
-	  @Override
-	    public CaregiverBean insertCaregiver(CaregiverBean caregiver) {
-	        // 確認使用者是否存在
-	        if (caregiver.getUser() != null && caregiver.getUser().getUserID() != null) {
-	            UserBean user = userService.queryOne(caregiver.getUser().getUserID());
-	            caregiver.setUser(user);
-	            if (user == null) {
-	                throw new RuntimeException("找不到此使用者ID: " + caregiver.getUser().getUserID());
-	            }
-	        }
-	        return caregiverRepository.save(caregiver);
-	    }
-	  @Override
-	    public CaregiverBean updateCaregiver(CaregiverBean caregiver) {
-	        // 確認護工是否存在
-	        CaregiverBean existingCaregiver = findCaregiver(caregiver.getCaregiverNO());
-	        if (existingCaregiver == null) {
-	            throw new RuntimeException("找不到此護工編號: " + caregiver.getCaregiverNO());
-	        }
-			return existingCaregiver;}
+        return caregiverRepository.save(existing);
+    }
 
-//	public CaregiverBean updateCaregiver(CaregiverBean caregiver, MultipartFile caregiverPictureFile)
-//			throws IOException {
-//		if (caregiverPictureFile != null && !caregiverPictureFile.isEmpty()) {
-//			byte[] imageBytes = caregiverPictureFile.getBytes();
-//			String base64Image = Base64.getEncoder().encodeToString(imageBytes);
-//			// 添加 data URI scheme 前綴
-//			base64Image = "data:image/jpeg;base64," + base64Image;
-//			caregiver.setCaregiverPicture(base64Image);
-//		}
-//		return caregiverRepository.save(caregiver);
-//	}
-
-	public void deleteCaregiver(Integer caregiverNO) {
-		caregiverRepository.deleteById(caregiverNO);
-	}
-
-
-
-
+   @Override
+   @Transactional
+   public void deleteCaregiver(Integer caregiverNO) {
+       caregiverRepository.deleteById(caregiverNO);
+   }
+   @Override
+   public CaregiverBean findCaregiverByUserId(String userId) {
+	   return caregiverRepository.findByUserUserID(userId);
+   }
+   
 }

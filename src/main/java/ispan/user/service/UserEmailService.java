@@ -7,6 +7,7 @@ import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.MailException;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
@@ -123,4 +124,45 @@ public class UserEmailService {
         userRepository.save(verifiedUser);
         return "驗證成功";
     }
+    
+    public void sendApprovalEmail(String to) {
+    	System.out.println("123");
+    	 try {
+             SimpleMailMessage message = new SimpleMailMessage();
+             message.setTo(to);
+             message.setSubject("心護家_看護申請審核通過");
+             message.setText("恭喜您！您的看護申請已通過審核，您現在可以開始提供看護服務。\n\n" +
+                           "請登入系統查看詳細資訊。");
+             mailSender.send(message);
+         } catch (MailException e) {
+             // 記錄錯誤但不中斷流程
+             e.printStackTrace();
+             // 可以選擇拋出自定義異常或繼續執行
+         }
+     }
+    
+
+ // UserEmailService.java
+    public void sendRejectionEmail(String to, String reason) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(to);
+        message.setSubject("心護家_看護申請審核結果");
+        message.setText("很抱歉，您的看護申請未能通過審核。\n\n原因：" + reason + 
+                       "\n\n如有任何疑問，請聯繫客服。");
+        mailSender.send(message);
+    }
+    private void sendEmail(String to, String subject, String text) {
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setTo(to);
+            message.setSubject(subject);
+            message.setText(text);
+            mailSender.send(message);
+        } catch (MailException e) {
+            // 記錄錯誤但不中斷流程
+            e.printStackTrace();
+        }
+    }
+
+    
 }
