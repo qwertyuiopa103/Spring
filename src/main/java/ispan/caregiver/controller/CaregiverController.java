@@ -260,6 +260,12 @@ public class CaregiverController {
                     .body(Map.of("error", "刪除失敗：" + e.getMessage()));
         }
     }
+    
+    @GetMapping("/FindByUserID/{userID}")
+    public CaregiverBean findCaregiverByUserId(@PathVariable String userID) {
+    	CaregiverBean caregiver = caregiverService.findCaregiverByUserID(userID);
+    	return caregiver;
+    }
 }
 	
 	 

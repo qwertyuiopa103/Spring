@@ -16,6 +16,7 @@ public interface ReserveDao extends JpaRepository<Reserve, Integer> {
 
     // 根據 Caregiver 的 ID 查找
     List<Reserve> findByCaregiverBeanCaregiverNO(int caregiverNO);
+    List<Reserve> findByStatus(String status);
     
     @Query("SELECT COUNT(r) > 0 "
             + "FROM Reserve r "

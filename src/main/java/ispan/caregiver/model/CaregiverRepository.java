@@ -8,6 +8,6 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface CaregiverRepository extends  JpaRepository<CaregiverBean, Integer> {
-	 
+	 CaregiverBean findByUserUserID(String userID);
 
 }

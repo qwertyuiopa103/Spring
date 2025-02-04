@@ -102,7 +102,9 @@ public class CaregiverServiceImpl implements CaregiverService {
 		caregiverRepository.deleteById(caregiverNO);
 	}
 
-
+	public CaregiverBean findCaregiverByUserID(String userID) {
+		return caregiverRepository.findByUserUserID(userID);
+	}
 
 
 }

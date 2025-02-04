@@ -84,5 +84,9 @@ public class ReserveService {
     public boolean saveService(Reserve reserve) {
     	return reserveDao.isOverlappingWithExistingReservation(reserve.getCaregiverBean().getCaregiverNO(), reserve.getReserveId(), reserve.getStartDate(), reserve.getEndDate());
     }
+    
+    public List<Reserve> findReservesByStatus(String status) {
+        return reserveDao.findByStatus(status);
+    }
 
 }

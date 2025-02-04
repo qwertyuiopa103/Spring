@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import ispan.reserve.model.Reserve;
+import ispan.reserve.service.ReserveEmailService;
 import ispan.reserve.service.ReserveService;
 
 //Contorllers
@@ -26,6 +27,9 @@ public class ReserveController {
 	
 	@Autowired
 	ReserveService reserveService;
+	
+	@Autowired
+	ReserveEmailService reserveEmailService;
 	
 	@GetMapping
 	public List<Reserve> ReserveFindAll() {
@@ -53,17 +57,23 @@ public class ReserveController {
 
 	    return reserves;
 	}
-	@GetMapping("/search/{caregiverId}")
+	@GetMapping("/search/caregiver/{caregiverId}")
 	public List<Reserve> ReserveFindByCaregiver(@PathVariable Integer caregiverId) {
 	    List<Reserve> reserves = reserveService.findReserveByCaregiverId(caregiverId);
+	    return reserves;
+	}
+	@GetMapping("/search/user/{userId}")
+	public List<Reserve> ReserveFindByUser(@PathVariable String userId) {
+	    List<Reserve> reserves = reserveService.findReserveByUserId(userId);
 	    return reserves;
 	}
 	
 
 	@PostMapping
 	public ResponseEntity<String> ReserveInsert(@RequestBody Reserve reserve) {
-		System.out.println(reserve);
 		boolean success = reserveService.insertReserve(reserve);
+		System.out.println(reserve.getCaregiverBean().getUser().getUserEmail());
+		reserveEmailService.sendWorkRequestEmail(reserve.getCaregiverBean().getUser().getUserEmail());
 		if (success) {
             return ResponseEntity.ok("新增成功");
         } else {
@@ -78,6 +88,30 @@ public class ReserveController {
             return ResponseEntity.ok("刪除成功");
         } else {
             return ResponseEntity.status(500).body("刪除失敗");
+        }
+	}
+	
+	@PutMapping("/{reserveId}")
+	public ResponseEntity<String> ReserveRefuse(@PathVariable int reserveId) {
+		Reserve reserve = reserveService.findReserveById(reserveId);
+		reserve.setStatus("已拒絕");
+	    boolean success = reserveService.updateReserve(reserve);
+	    reserveEmailService.sendWorkCancelEmail(reserve.getUserBean().getUserEmail());
+	    if (success) {
+            return ResponseEntity.ok("更新成功");
+        } else {
+            return ResponseEntity.status(500).body("更新失敗");
+        }
+	}
+	@PutMapping("/order/{reserveId}")
+	public ResponseEntity<String> ReserveDeleteByOrder(@PathVariable int reserveId) {
+		Reserve reserve = reserveService.findReserveById(reserveId);
+		reserve.setStatus("已接受");
+	    boolean success = reserveService.updateReserve(reserve);
+	    if (success) {
+            return ResponseEntity.ok("更新成功");
+        } else {
+            return ResponseEntity.status(500).body("更新失敗");
         }
 	}
 	
