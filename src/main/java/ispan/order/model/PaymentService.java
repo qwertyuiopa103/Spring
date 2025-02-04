@@ -51,9 +51,9 @@ public class PaymentService {
         obj.setTotalAmount(totalPrice);
         obj.setTradeDesc("訂單編號：" + orderId);
         obj.setItemName("看護服務 " + orderId);
-
+        
         // 設置回傳 URL
-        obj.setReturnURL("https://47e4-111-249-15-54.ngrok-free.app/api/payment/callback");
+        obj.setReturnURL("https://a1c9-111-249-22-59.ngrok-free.app/api/payment/callback");
         obj.setClientBackURL("http://localhost:5173/#/home");
 
         // 不需要額外付款資訊

@@ -17,24 +17,27 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import ispan.order.model.OrderBean;
+import ispan.order.model.OrderEmailService;
 import ispan.order.model.OrderService;
+import ispan.user.service.UserService;
 import ispan.order.dto.OrderStatusUpdateDTO;
-//在家測試
-//在家測試2
+
 @RestController //返回的數據自動轉換成 JSON 格式。
 @RequestMapping("/api/ordersAdmin") //設定這個控制器的基礎路徑為 /orders
 
 public class OrderAdminController {
 	@Autowired //自動注入 OrderService
 	private OrderService orderService;
+	@Autowired
+	private OrderEmailService orderEmailService;
 	
-
 	//新增
 	@PostMapping("/createOrder")
 	public ResponseEntity<String> createOrder(@RequestBody OrderBean order) {
 	    try {
 	        // 創建訂單並保存
 	        OrderBean createdOrder = orderService.createOrder(order);
+	        orderEmailService.sendPaymentReminderEmail(createdOrder.getOrderId());
 
 	        // 返回創建的 OrderBean (成功的回應)
 	        return new ResponseEntity<>("訂單新增成功", HttpStatus.CREATED);

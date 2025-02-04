@@ -7,7 +7,9 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
+import ispan.user.model.UserBean;
 import ispan.user.model.UserRepository;
+import ispan.user.service.UserService;
 
 @Service
 public class OrderEmailService {
@@ -15,18 +17,22 @@ public class OrderEmailService {
     private JavaMailSender mailSender;
 	    @Autowired
 	    private OrderRepository orderRepository;
-
+	    @Autowired
+		private UserService userService;
 	    public void sendPaymentReminderEmail(int orderId) {
 	        Optional<OrderBean> orderOptional = orderRepository.findById(orderId);
 	        
 	        if (orderOptional.isPresent()) {
 	            OrderBean order = orderOptional.get();
-	            String userEmail = order.getUser().getUserEmail();
+	            UserBean user=userService.queryOne(order.getUser().getUserID());
+	            
+	            String userEmail =user.getUserEmail();
+	            System.out.println(user.getUserEmail());
 	            
 	            SimpleMailMessage message = new SimpleMailMessage();
 	            message.setTo(userEmail);
-	            message.setSubject("心護家_預約付款通知");
-	            message.setText("您的預約已成立，請盡速付款。\n\n" +
+	            message.setSubject("心護家_訂單付款通知");
+	            message.setText("您的訂單已成立，請盡速付款。\n\n" +
 	                            "首頁網址：http://localhost:5173/#/home");
 	            
 	            mailSender.send(message);

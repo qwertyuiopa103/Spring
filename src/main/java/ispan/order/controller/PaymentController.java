@@ -2,15 +2,18 @@ package ispan.order.controller;
 
 import ispan.order.model.OrderService;
 import ispan.order.model.PaymentService;
+import ispan.order.model.RefundService;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import ecpay.payment.integration.AllInOne;
+import ecpay.payment.integration.exception.EcpayException;
 
 import java.util.HashMap;
 import java.util.Hashtable;
@@ -24,7 +27,10 @@ public class PaymentController {
     private final PaymentService paymentService;
 
     @Autowired
-    private OrderService orderService;;
+    private OrderService orderService;
+    
+    @Autowired
+    private RefundService refundService;  // 注入 RefundService
     public PaymentController(PaymentService paymentService) {
         this.paymentService = paymentService;
     }
@@ -85,7 +91,65 @@ public class PaymentController {
             return ResponseEntity.ok("0|" + e.getMessage());
         }
     }
+    
+    /**
+     * 查詢訂單狀態
+     * @param merchantTradeNo 訂單的商戶交易號
+     * @return 訂單狀態
+     */
+    @GetMapping("/query/{merchantTradeNo}")
+    public ResponseEntity<String> queryOrderStatus(@PathVariable String merchantTradeNo) {
+        try {
+            String tradeStatus = refundService.queryTradeInfo(merchantTradeNo);
+            return ResponseEntity.ok(tradeStatus);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("查詢訂單狀態失敗: " + e.getMessage());
+        }
+    }
+    /**
+     * 退款操作
+     *
+     * @param merchantTradeNo 訂單交易編號
+     * @param tradeNo 交易編號
+     * @param totalAmount 退款金額
+     * @param fullRefund 是否為全額退款
+     * @return 退款處理結果訊息
+     */
+    @PostMapping("/refund")
+    public ResponseEntity<String> refund(
+            @RequestParam String merchantTradeNo,
+            @RequestParam String tradeNo,
+            @RequestParam int totalAmount,
+            @RequestParam boolean fullRefund) {
+        try {
+            // 先查詢交易狀態
+            String tradeStatus = refundService.queryTradeInfo(merchantTradeNo);
 
+            // 根據不同的交易狀態進行相應操作
+            String actionResult = "";
+            if ("AUTHORIZED".equals(tradeStatus)) {
+                // 已授權階段，執行放棄
+                actionResult = refundService.doAction(merchantTradeNo, tradeNo, "N", totalAmount);
+            } else if ("CAPTURED".equals(tradeStatus)) {
+                if (fullRefund) {
+                    // 已關帳階段，執行取消後放棄
+                    refundService.doAction(merchantTradeNo, tradeNo, "E", totalAmount);
+                    actionResult = refundService.doAction(merchantTradeNo, tradeNo, "N", totalAmount);
+                } else {
+                    // 部分退款，執行退刷
+                    actionResult = refundService.doAction(merchantTradeNo, tradeNo, "R", totalAmount);
+                }
+            } else {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid trade status: " + tradeStatus);
+            }
+
+            return ResponseEntity.ok(actionResult);
+        } catch (EcpayException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Refund operation failed: " + e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error processing refund: " + e.getMessage());
+        }
+    }
 
 
 }
