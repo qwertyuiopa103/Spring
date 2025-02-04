@@ -4,7 +4,7 @@ import dev.langchain4j.model.ollama.OllamaChatModel;
 import io.jsonwebtoken.io.IOException;
 import ispan.caregiver.model.CaregiverBean;
 import ispan.caregiver.model.CaregiverRepository;
-import ispan.caregiver.model.ServiceArea;
+import ispan.caregiver.model.ServiceAreaBean;
 import ispan.caregiver.model.ServiceAreaRepository;
 import jakarta.annotation.PostConstruct;
 
@@ -216,13 +216,13 @@ public class ChatService {
 	    Set<CaregiverBean> resultSet = new LinkedHashSet<>();
 	    for (String regionKeyword : regionList) {
 	        // 取得所有符合的 ServiceArea
-	        List<ServiceArea> areas = findServiceAreasByKeyword(regionKeyword);
+	        List<ServiceAreaBean> areas = findServiceAreasByKeyword(regionKeyword);
 	        if (areas != null && !areas.isEmpty()) {
-	            for (ServiceArea area : areas) {
-	                System.out.println("查詢區域: " + regionKeyword + " -> ServiceAreaID: " + area.getAreaId());
+	            for (ServiceAreaBean area : areas) {
+	                System.out.println("查詢區域: " + regionKeyword + " -> ServiceAreaID: " + area.getAreaID());
 	                List<CaregiverBean> partial = caregiverRepository
 	                        .findTop3ByServicesAndServiceAreaOrderByCaregiverNOAsc(caretakerLevel, area);
-	                System.out.println("找到 " + partial.size() + " 位看護在 " + regionKeyword + " (AreaID:" + area.getAreaId() + ")");
+	                System.out.println("找到 " + partial.size() + " 位看護在 " + regionKeyword + " (AreaID:" + area.getAreaID() + ")");
 	                resultSet.addAll(partial);
 	            }
 	        } else {
@@ -235,9 +235,9 @@ public class ChatService {
 	}
 
 
-	private List<ServiceArea> findServiceAreasByKeyword(String input) {
+	private List<ServiceAreaBean> findServiceAreasByKeyword(String input) {
 	    String lower = input.toLowerCase();
-	    List<ServiceArea> result = new ArrayList<>();
+	    List<ServiceAreaBean> result = new ArrayList<>();
 
 	    if (lower.contains("台北") || lower.contains("臺北")) {
 	        result.addAll(serviceAreaRepository.findByTaipeiCityTrue());
@@ -310,7 +310,7 @@ public class ChatService {
 	}
 
 
-	private String resolveAreaName(ServiceArea area) {
+	private String resolveAreaName(ServiceAreaBean area) {
 		if (area == null)
 			return "未紀錄"; // 如果 ServiceArea 為 null，則回傳未紀錄
 
@@ -318,50 +318,72 @@ public class ChatService {
 		StringBuilder regions = new StringBuilder();
 
 		// 檢查每個地區的 boolean 是否為 true，若是則加入結果
-		if (area.isTaipeiCity())
-			regions.append("台北, ");
-		if (area.isNewTaipeiCity())
-			regions.append("新北, ");
-		if (area.isTaoyuanCity())
-			regions.append("桃園, ");
-		if (area.isTaichungCity())
-			regions.append("台中, ");
-		if (area.isTainanCity())
-			regions.append("台南, ");
-		if (area.isKaohsiungCity())
-			regions.append("高雄, ");
-		if (area.isHsinchuCity())
-			regions.append("新竹市, ");
-		if (area.isHsinchuCounty())
-			regions.append("新竹縣, ");
-		if (area.isKeelungCity())
-			regions.append("基隆, ");
-		if (area.isYilanCounty())
-			regions.append("宜蘭, ");
-		if (area.isMiaoliCounty())
-			regions.append("苗栗, ");
-		if (area.isChanghuaCounty())
-			regions.append("彰化, ");
-		if (area.isNantouCounty())
-			regions.append("南投, ");
-		if (area.isYunlinCounty())
-			regions.append("雲林, ");
-		if (area.isChiayiCity())
-			regions.append("嘉義市, ");
-		if (area.isChiayiCounty())
-			regions.append("嘉義縣, ");
-		if (area.isPingtungCounty())
-			regions.append("屏東, ");
-		if (area.isTaitungCounty())
-			regions.append("台東, ");
-		if (area.isHualienCounty())
-			regions.append("花蓮, ");
-		if (area.isPenghuCounty())
-			regions.append("澎湖, ");
-		if (area.isKinmenCounty())
-			regions.append("金門, ");
-		if (area.isLienchiangCounty())
-			regions.append("連江（馬祖）, ");
+		 if (area.isTaipei_city()) {
+		        regions.append("台北, ");
+		    }
+		    if (area.isNew_taipei_city()) {
+		        regions.append("新北, ");
+		    }
+		    if (area.isTaoyuan_city()) {
+		        regions.append("桃園, ");
+		    }
+		    if (area.isTaichung_city()) {
+		        regions.append("台中, ");
+		    }
+		    if (area.isTainan_city()) {
+		        regions.append("台南, ");
+		    }
+		    if (area.isKaohsiung_city()) {
+		        regions.append("高雄, ");
+		    }
+		    if (area.isHsinchu_city()) {
+		        regions.append("新竹市, ");
+		    }
+		    if (area.isHsinchu_county()) {
+		        regions.append("新竹縣, ");
+		    }
+		    if (area.isKeelung_city()) {
+		        regions.append("基隆, ");
+		    }
+		    if (area.isYilan_county()) {
+		        regions.append("宜蘭, ");
+		    }
+		    if (area.isMiaoli_county()) {
+		        regions.append("苗栗, ");
+		    }
+		    if (area.isChanghua_county()) {
+		        regions.append("彰化, ");
+		    }
+		    if (area.isNantou_county()) {
+		        regions.append("南投, ");
+		    }
+		    if (area.isYunlin_county()) {
+		        regions.append("雲林, ");
+		    }
+		    if (area.isChiayi_city()) {
+		        regions.append("嘉義市, ");
+		    }
+		    if (area.isChiayi_county()) {
+		        regions.append("嘉義縣, ");
+		    }
+		    if (area.isPingtung_county()) {
+		        regions.append("屏東, ");
+		    }
+		    if (area.isTaitung_county()) {
+		        regions.append("台東, ");
+		    }
+		    if (area.isHualien_county()) {
+		        regions.append("花蓮, ");
+		    }
+		    if (area.isPenghu_county()) {
+		        regions.append("澎湖, ");
+		    }
+		    if (area.isKinmen_county()) {
+		        regions.append("金門, ");
+		    }
+		    if (area.isLienchiang_county()) {
+		        regions.append("連江（馬祖）, ");
+		    }
 
 		// 移除最後一個多餘的逗號和空格
 		if (regions.length() > 0) {

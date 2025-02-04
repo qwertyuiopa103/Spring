@@ -1,5 +1,6 @@
 package ispan.caregiver.model;
 
+
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
@@ -26,16 +27,22 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
+
+import jakarta.persistence.*;
+import lombok.Data;
+
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import ispan.user.model.UserBean;
+@Data
 @Getter
 @Setter
 @NoArgsConstructor
-@Entity // 指定這是一個 Hibernate 的實體類
-@Table(name = "Caregiver") // 對應資料庫中的表名
-public class CaregiverBean {	
-    @Id // 主鍵
+@Entity
+@Table(name = "Caregiver")
+public class CaregiverBean {
+    @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "caregiverNO")
     private int caregiverNO;
@@ -46,29 +53,25 @@ public class CaregiverBean {
     @Column(name = "caregiverAge")
     private int caregiverAge;
     
-    @Column(name = "expYears", length = 3)
+    @Column(name = "expYears")
     private int expYears;
-
-//    @Column(name = "eduExperience", length = 255)
-//    private String eduExperience;
-
-    // 改為以「時薪」儲存，使用 Double 型別
-//    @Column(name = "hourlyRate")
-//    private Double hourlyRate;
-    @Column(name = "DaylyRate", nullable = false)
-    private BigDecimal daylyRate; // 日薪 (DECIMAL(10,2))
     
     @Column(name = "Services")
     private String services; 
     
-    // 與 User 表的關聯
-    @OneToOne(cascade = CascadeType.ALL)
+    @Column(name = "Education")
+    private String education;
+    
+    @Column(name = "DaylyRate")
+    private Double daylyRate;
+    
+    @OneToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
     @JoinColumn(name = "userID", referencedColumnName = "userID")
     private UserBean user;
     
     @ManyToOne
     @JoinColumn(name = "AreaID")
-    private ServiceArea serviceArea;
+    private ServiceAreaBean serviceArea;
 
     // 便利方法，用於檢查是否有關聯的使用者
     public boolean hasUser() {
@@ -100,9 +103,18 @@ public class CaregiverBean {
         return hasUser() ? user.getUserPhotoBase64() : null;
     }
 
-
-	
-	
-	
+//    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+//    @JoinColumn(name = "AreaID")
+//    private ServiceAreaBean serviceArea;
+    
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "CertifiPhotoID")
+    private CertifiPhotoBean certifiPhoto;
+    
+    @Column(name = "CGstatus")
+    private String CGstatus = "PENDING"; // PENDING, APPROVED, REJECTED
 
 }
+
+
+
