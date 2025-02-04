@@ -44,7 +44,7 @@ public class UserLoginService {
 	            user.getUserSecurity().setUsers(user);
 	            if (user.getUserSecurity().isUserDeleted()) {
 	                // 視為帳號不存在
-	                throw new InvalidCredentialsException("帳號不存在或密碼錯誤");
+	                throw new InvalidCredentialsException("帳號已刪除");
 	            }
 
 	            if (!user.getUserSecurity().isUserActive()) {

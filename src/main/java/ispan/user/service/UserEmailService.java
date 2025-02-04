@@ -119,7 +119,7 @@ public class UserEmailService {
 				.findByResetPasswordTokenAndExpiry(token,
 						new Timestamp(System.currentTimeMillis()));
 		if (user.isEmpty()) {
-			throw new AccountPasswordChangeException("無效的 token 或已過期");
+			throw new AccountPasswordChangeException("無效的網址或已過期");
 		}
 		UserBean verifiedUser = user.get();
 
