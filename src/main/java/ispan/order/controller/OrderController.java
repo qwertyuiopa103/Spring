@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import ispan.caregiver.model.CaregiverBean;
+import ispan.order.dto.OrderStatusUpdateDTO;
 import ispan.order.model.OrderBean;
 import ispan.order.model.OrderEmailService;
 import ispan.order.model.OrderService;
@@ -89,6 +90,29 @@ public class OrderController {
         List<OrderBean> orders = orderService.findOrdersByCaregiver(caregiver);
         return new ResponseEntity<>(orders, HttpStatus.OK);
     }
+    
+    @PutMapping("/updateStatus/{orderId}")
+    public ResponseEntity<?> updateOrderStatusAndCancellationId(
+    	    @PathVariable int orderId,
+    	    @RequestBody(required = false) OrderStatusUpdateDTO updateDTO) {
+    	    
+    	    if (updateDTO == null) {
+    	        return ResponseEntity.badRequest().body("請求體不能為空");
+    	    }
+    	    
+    	    try {
+    	        OrderBean updatedOrder = orderService.updateOrderStatusAndCancellationId(
+    	            orderId, 
+    	            updateDTO.getStatus(), 
+    	            updateDTO.getCancellationId()
+    	        );
+    	        return ResponseEntity.ok(updatedOrder);
+    	    } catch (Exception e) {
+    	        return ResponseEntity.badRequest().body(e.getMessage());
+    	    }
+    	}
+    
+    
     //更新
 //    @PutMapping("/UpdateOrder/{orderId}")
 //    public ResponseEntity<String> updateOrder(@PathVariable int orderId, @RequestBody OrderBean order) {
