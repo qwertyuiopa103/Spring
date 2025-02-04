@@ -4,6 +4,7 @@ import java.sql.Date;
 
 
 import ispan.caregiver.model.CaregiverBean;
+import ispan.orderCancel.model.OrderCancelBean;
 import ispan.user.model.UserBean;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -13,6 +14,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -35,7 +37,10 @@ import lombok.NoArgsConstructor;
 		@ManyToOne(fetch = FetchType.EAGER)
 		@JoinColumn(name = "caregiverNO", referencedColumnName = "caregiverNO")
 		private CaregiverBean caregiver;
-	
+		
+		@OneToOne(fetch = FetchType.EAGER)
+		@JoinColumn(name = "cancellation_id", referencedColumnName = "cancellation_id")
+		private OrderCancelBean cancellation ;
 		@Column(name = "order_date", nullable = false)
 		private Date orderDate;
 		@Column(name = "start_date", nullable = false)
@@ -50,5 +55,8 @@ import lombok.NoArgsConstructor;
 		private int totalPrice;
 		@Column(name="payment_method")
 		private String paymentMethod;
-		
+		@Column(name="TradeNo")
+		private String 	TradeNo;
+		@Column(name="MerchantTradeNo")
+		private String MerchantTradeNo;
 	    }

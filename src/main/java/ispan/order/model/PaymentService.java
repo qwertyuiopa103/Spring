@@ -8,6 +8,7 @@ import ecpay.payment.integration.domain.AioCheckOutALL;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Hashtable;
 import java.util.Map;
 import java.util.UUID;
 
@@ -50,28 +51,51 @@ public class PaymentService {
         obj.setTotalAmount(totalPrice);
         obj.setTradeDesc("訂單編號：" + orderId);
         obj.setItemName("看護服務 " + orderId);
-
+        
         // 設置回傳 URL
-        obj.setReturnURL("http://localhost:8080/payment/callback");
-        obj.setClientBackURL("http://localhost:5173/#/home/UserOrderView");
+        obj.setReturnURL("https://a1c9-111-249-22-59.ngrok-free.app/api/payment/callback");
+        obj.setClientBackURL("http://localhost:5173/#/home");
 
         // 不需要額外付款資訊
-        obj.setNeedExtraPaidInfo("N");
+        obj.setNeedExtraPaidInfo("Y");
 
         // 生成綠界支付表單
         String form = all.aioCheckOut(obj, null);
         // 更新訂單狀態
         try {
         	int orderIdInt = Integer.parseInt(orderId);
-            orderService.updateOrderStatusById(orderIdInt, "付款完成");
-            orderService.updatePaymentMethodByOrderId(orderIdInt,"信用卡" );
+            //orderService.updateOrderStatusById(orderIdInt, "付款完成");
+            //orderService.updatePaymentMethodByOrderId(orderIdInt,"信用卡" );
+            orderService.updateMerchantTradeNo(orderIdInt, uuId);
 		} catch (Exception e) {
 			// TODO: handle exception
 		}
         
         return form;
     }
-
+    // 付款方式轉換方法
+    public String convertPaymentMethod(String PaymentMethod) {
+        switch (PaymentMethod) {
+            case "Credit_CreditCard":
+                return "信用卡";
+//            case "ATM":
+//                return "ATM";
+//            case "WebATM":
+//                return "WebATM";
+//            case "Alipay":
+//                return "支付寶";
+            default:
+                return "未知";
+        }
+    }
+    /**
+     * 驗證回傳資料的 CheckMacValue 是否正確
+     */
+ // 驗證 CheckMacValue
+    public boolean validateCheckMacValue(Map<String, String> params) {
+        Hashtable<String, String> dict = new Hashtable<>(params);
+        return all.compareCheckMacValue(dict);
+    }
     /**
      * 處理綠界金流回傳的付款結果
      *
@@ -79,77 +103,32 @@ public class PaymentService {
      * @return 是否處理成功
      */
     public boolean handlePaymentReturn(Map<String, String> params) {
-        System.out.println("收到支付回調: " + params);  // 確認回傳的參數
-        if (!params.containsKey("RtnCode") || !params.containsKey("TradeDesc")) {
-            System.out.println("缺少必要參數！");
-            return false;
-        }
-
-        String tradeStatus = params.get("RtnCode");
-        String tradeDesc = params.get("TradeDesc");
-        String tradeMessage = params.get("RtnMsg");
-
+    	System.out.println("開始處理支付回調");
+        
         try {
-            // 從 TradeDesc 中解析訂單編號
-            String orderIdStr = tradeDesc.replace("訂單編號：", "");
-            int orderId = Integer.parseInt(orderIdStr);
-
-            System.out.println("處理的訂單 ID：" + orderId); // 輸出解析後的訂單 ID
-
-            // 判斷付款狀態
-            if ("1".equals(tradeStatus)) {
-                System.out.println("付款成功：" + tradeMessage);
-
-                // 更新訂單狀態為「付款成功」
-                boolean updated = orderService.updateOrderStatusById(orderId, "付款成功");
-                if (updated) {
-                    System.out.println("訂單狀態已更新為付款成功！");
-                } else {
-                    System.out.println("更新訂單狀態時發生錯誤！");
+            String merchantTradeNo = params.get("MerchantTradeNo");
+            String rtnCode = params.get("RtnCode");
+            String PaymentMethod = params.get("PaymentType");
+            System.out.println("PaymentMethod:"+PaymentMethod);
+            String TradeNo = params.get("TradeNo");
+            // 交易成功
+            if ("1".equals(rtnCode)) {
+            	String convertedPaymentMethod = convertPaymentMethod(PaymentMethod);
+                // 根據 MerchantTradeNo 查找訂單並更新狀態
+                try {
+                    orderService.updateOrderStatusBymerchantTradeNo(merchantTradeNo, "付款完成");
+                    orderService.updatePaymentMethodBymerchantTradeNo(merchantTradeNo, convertedPaymentMethod);
+                    orderService.updateTradeNoByMerchantTradeNo(merchantTradeNo, TradeNo);
+                    return true;
+                } catch (Exception e) {
+                    return false;
                 }
-
-                return true;
             } else {
-                System.out.println("付款失敗：" + tradeMessage);
                 return false;
             }
+            
         } catch (Exception e) {
-            System.out.println("處理回傳時發生錯誤：" + e.getMessage());
             return false;
         }
-    }
-
-    /**
-     * 驗證 CheckMacValue
-     *
-     * @param params    回傳的參數
-     * @param hashKey   HashKey
-     * @param hashIV    HashIV
-     * @return 是否驗證成功
-     */
-    public boolean validateCheckMacValue(Map<String, String> params, String hashKey, String hashIV) {
-        // 按綠界規定的順序組裝並加密
-        String rawData = generateRawData(params, hashKey, hashIV);
-        String calculatedMac = encryptString(rawData);
-
-        // 比對計算出的簽章與回傳的 CheckMacValue
-        return calculatedMac.equals(params.get("CheckMacValue"));
-    }
-
-    private String generateRawData(Map<String, String> params, String hashKey, String hashIV) {
-        // 根據綠界規定的順序與格式組裝字串
-        // 注意：需要將參數按鍵值排序後組裝，這裡僅為示例
-        String rawData = "HashKey=" + hashKey;
-        for (Map.Entry<String, String> entry : params.entrySet()) {
-            rawData += "&" + entry.getKey() + "=" + entry.getValue();
-        }
-        rawData += "&HashIV=" + hashIV;
-        return rawData;
-    }
-
-    private String encryptString(String rawString) {
-        // 進行 SHA256 或 MD5 加密 (根據綠界需求調整)
-        // 這裡僅提供示例，需根據實際需求實現
-        return rawString; // 返回加密後字串
     }
 }

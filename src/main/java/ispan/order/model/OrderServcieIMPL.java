@@ -2,21 +2,24 @@ package ispan.order.model;
 
 import java.sql.Date;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import ispan.caregiver.model.CaregiverBean;
+import ispan.orderCancel.model.OrderCancelBean;
+import ispan.orderCancel.model.OrderCancelRepository;
 import ispan.user.model.UserBean;
 import jakarta.transaction.Transactional;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 @Service
 @Transactional
 public class OrderServcieIMPL implements OrderService {
 	@Autowired
 	private OrderRepository orderRepository;
+	@Autowired
+	private OrderCancelRepository orderCancelRepository;
+
 	//新增
 	@Override
 	public OrderBean createOrder(OrderBean order) {
@@ -31,15 +34,11 @@ public class OrderServcieIMPL implements OrderService {
 	    }
 		return orderRepository.save(order);
 	}
-	//分頁處理，根據使用者提供的頁數每頁資料量返回對應頁面的訂單
+	//全部
 	@Override
-	public List<OrderBean> findAllOrders(int page, int pageSize) {
-		// page從1開始，所以要減1
-	    Pageable pageable = PageRequest.of(page - 1, pageSize);  
-	
-	    Page<OrderBean> ordersPage = orderRepository.findAll(pageable); 
-	    // 取得分頁資料
-	    return ordersPage.getContent();     
+	public List<OrderBean> findAllOrders() {
+	    // 查詢並返回所有的訂單資料
+	    return orderRepository.findAll();  // 直接查詢所有訂單
 	}
 //	//根據使用者查訂單
 	@Override
@@ -144,5 +143,76 @@ public class OrderServcieIMPL implements OrderService {
     public long getCount() {
     	return  orderRepository.count();
     }
-}
+    @Override
+    public OrderBean updateOrderStatusAndCancellationId(int orderId, String status, Integer cancellationId) {
+        // 找訂單
+        OrderBean order = orderRepository.findById(orderId)
+            .orElseThrow(() -> new RuntimeException("找不到此訂單"));
+
+        // 更新狀態
+        if (status != null && !status.trim().isEmpty()) {
+            order.setStatus(status);
+        }
+
+        // 更新取消訂單ID
+        if (cancellationId != null) {
+            OrderCancelBean cancelBean = orderCancelRepository.findById(cancellationId)
+                .orElseThrow(() -> new RuntimeException("找不到取消訂單記錄"));
+            order.setCancellation(cancelBean);
+        }
+
+        // 打印傳入參數
+        System.out.println("Order ID: " + orderId);
+        System.out.println("Status: " + status); // 使用傳入的 status 參數
+        System.out.println("Cancellation ID: " + cancellationId); // 使用傳入的 cancellationId 參數
+
+        return orderRepository.save(order);
+    }
+    @Override
+    public Integer getCancellationIdByOrderId(int orderId) {
+        Optional<OrderBean> order = orderRepository.findById(orderId);
+        return order.map(OrderBean::getCancellation).map(OrderCancelBean::getCancellationId).orElse(null);
+    }
+    //根據訂單ID新增交易號碼(綠界的)
+    @Override
+    public OrderBean updateTradeNo(int orderId, String tradeNo) {
+        // 查訂單
+        OrderBean order = orderRepository.findByOrderId(orderId);
+        // 更新 TradeNo
+        order.setTradeNo(tradeNo); 
+        // 保存並返回更新後的訂單
+        return orderRepository.save(order);
+    }
+    
+  //根據訂單ID新增交易號碼(自己產生的UUID)
+    @Override
+    public OrderBean updateMerchantTradeNo(int orderId, String MerchantTradeNo) {
+        // 查訂單
+        OrderBean order = orderRepository.findByOrderId(orderId);
+        // 更新 TradeNo
+        order.setMerchantTradeNo(MerchantTradeNo); 
+        // 保存並返回更新後的訂單
+        return orderRepository.save(order);
+    }
+    @Override
+    public void updateOrderStatusBymerchantTradeNo(String merchantTradeNo, String status) {
+        int updatedRows = orderRepository.updateOrderStatusByMerchantTradeNo(merchantTradeNo, status);
+        if (updatedRows == 0) {
+            // 如果沒有更新任何行，可以選擇拋出異常或做其他處理
+            throw new RuntimeException("No order found with the given merchantTradeNo");
+        }
+    }
+    @Override
+    public void updatePaymentMethodBymerchantTradeNo(String merchantTradeNo, String paymentMethod) {
+        orderRepository.updatePaymentMethodByMerchantTradeNo(merchantTradeNo, paymentMethod);
+    }
+    @Override
+    public int updateTradeNoByMerchantTradeNo(String merchantTradeNo, String tradeNo) {
+        // 只更新 TradeNo
+        return orderRepository.updateTradeNoByMerchantTradeNo(merchantTradeNo, tradeNo);
+    }
+
+   
+    }
+
 

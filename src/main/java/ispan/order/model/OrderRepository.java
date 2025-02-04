@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import ispan.caregiver.model.CaregiverBean;
 import ispan.user.model.UserBean;
+//import jakarta.transaction.Transactional;
 
 
 public interface OrderRepository extends JpaRepository<OrderBean, Integer> {
@@ -51,7 +52,7 @@ public interface OrderRepository extends JpaRepository<OrderBean, Integer> {
     
     @Query("SELECT COUNT(o) FROM OrderBean o ")
     long countOrderBean();
-    
+
     @Transactional
 	@Modifying
 	@Query("DELETE FROM OrderBean c WHERE c.user.userID = :userID")
@@ -68,5 +69,23 @@ public interface OrderRepository extends JpaRepository<OrderBean, Integer> {
     @Query("SELECT COUNT(o) FROM OrderBean o WHERE o.caregiver.caregiverNO = :caregiverNO AND o.status NOT IN ('完成', '已取消')")
     long countOrderstatuscaregiverNO(@Param("caregiverNO") Integer caregiverNO);
 
+    //根據MerchantTradeNo改變訂單狀態
+    @Modifying
+    @Transactional
+    @Query("UPDATE OrderBean o SET o.status = :status WHERE o.MerchantTradeNo = :merchantTradeNo")
+    int updateOrderStatusByMerchantTradeNo(String merchantTradeNo, String status);
+    //根據MerchantTradeNo改變付款方式
+        @Modifying
+        @Transactional
+        @Query("UPDATE OrderBean o SET o.paymentMethod = :paymentMethod WHERE o.MerchantTradeNo = :merchantTradeNo")
+        int updatePaymentMethodByMerchantTradeNo(String merchantTradeNo, String paymentMethod);
+      //根據MerchantTradeNo改變TradeNo
+        @Modifying
+        @Query("UPDATE OrderBean o SET o.TradeNo = :tradeNo WHERE o.MerchantTradeNo = :merchantTradeNo")
+        int updateTradeNoByMerchantTradeNo(String merchantTradeNo, String tradeNo);
+    }
+	
 
-}
+
+
+
