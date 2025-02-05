@@ -26,10 +26,8 @@ public class EventController {
     // 查詢所有事件
     @GetMapping("/all")
     public List<EventBean> findAllEvents() {
-    	System.out.println("AAA");
         try {
         	//System.out.println(eventService.findAllEvents());
-        	System.out.println("END");
             return eventService.findAllEvents();
         } catch (Exception e) {
             e.printStackTrace();
