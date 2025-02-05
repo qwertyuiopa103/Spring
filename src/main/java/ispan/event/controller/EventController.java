@@ -18,9 +18,8 @@ import ispan.event.service.EventServiceImpl;
 
 @RestController
 @RequestMapping("/api/event")
-//@CrossOrigin("http://localhost:5173/")
+@CrossOrigin(origins = "http://localhost:5173")  // 添加這行
 public class EventController {
-
     @Autowired
     private EventServiceImpl eventService;
 
@@ -42,6 +41,7 @@ public class EventController {
         try {
             return eventService.findEvent(eventID);
         } catch (Exception e) {
+        	System.out.println("END");
             e.printStackTrace();
             return null; // 返回 null 表示查詢失敗
         }

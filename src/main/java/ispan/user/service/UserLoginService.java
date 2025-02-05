@@ -32,6 +32,7 @@ public class UserLoginService {
 	}
 
 	private static final int MAX_FAILED_ATTEMPTS = 3;
+
 	private static final int LOCKOUT_TIME_MINUTES = 1;
 
 	 public String login(String account, String userPassword) {
