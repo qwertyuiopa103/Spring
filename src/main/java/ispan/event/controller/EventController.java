@@ -36,12 +36,12 @@ public class EventController {
     }
 
     // 查詢單一事件
+
     @GetMapping("/get")
     public EventBean getEvent(@RequestParam("eventID") int eventID) {
         try {
             return eventService.findEvent(eventID);
         } catch (Exception e) {
-        	System.out.println("END");
             e.printStackTrace();
             return null; // 返回 null 表示查詢失敗
         }
@@ -134,4 +134,5 @@ public class EventController {
             return "更新失敗: " + e.getMessage();
         }
     }
+    
 }

@@ -37,7 +37,7 @@ public class OrderAdminController {
 	    try {
 	        // 創建訂單並保存
 	        OrderBean createdOrder = orderService.createOrder(order);
-	        orderEmailService.sendPaymentReminderEmail(createdOrder.getOrderId());
+//	        orderEmailService.sendPaymentReminderEmail(createdOrder.getOrderId());
 
 	        // 返回創建的 OrderBean (成功的回應)
 	        return new ResponseEntity<>("訂單新增成功", HttpStatus.CREATED);
