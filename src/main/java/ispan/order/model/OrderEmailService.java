@@ -19,6 +19,7 @@ public class OrderEmailService {
 	    private OrderRepository orderRepository;
 	    @Autowired
 		private UserService userService;
+	    
 	    public void sendPaymentReminderEmail(int orderId) {
 	        Optional<OrderBean> orderOptional = orderRepository.findById(orderId);
 	        

@@ -57,14 +57,16 @@ public interface OrderRepository extends JpaRepository<OrderBean, Integer> {
     @Query("UPDATE OrderBean o SET o.status = :status WHERE o.MerchantTradeNo = :merchantTradeNo")
     int updateOrderStatusByMerchantTradeNo(String merchantTradeNo, String status);
     //根據MerchantTradeNo改變付款方式
-        @Modifying
-        @Transactional
-        @Query("UPDATE OrderBean o SET o.paymentMethod = :paymentMethod WHERE o.MerchantTradeNo = :merchantTradeNo")
-        int updatePaymentMethodByMerchantTradeNo(String merchantTradeNo, String paymentMethod);
-      //根據MerchantTradeNo改變TradeNo
-        @Modifying
-        @Query("UPDATE OrderBean o SET o.TradeNo = :tradeNo WHERE o.MerchantTradeNo = :merchantTradeNo")
-        int updateTradeNoByMerchantTradeNo(String merchantTradeNo, String tradeNo);
+    @Modifying
+    @Transactional
+    @Query("UPDATE OrderBean o SET o.paymentMethod = :paymentMethod WHERE o.MerchantTradeNo = :merchantTradeNo")
+    int updatePaymentMethodByMerchantTradeNo(String merchantTradeNo, String paymentMethod);
+    //根據MerchantTradeNo改變TradeNo
+    @Modifying
+    @Query("UPDATE OrderBean o SET o.TradeNo = :tradeNo WHERE o.MerchantTradeNo = :merchantTradeNo")
+    int updateTradeNoByMerchantTradeNo(String merchantTradeNo, String tradeNo);
+    
+
     }
 	
 
