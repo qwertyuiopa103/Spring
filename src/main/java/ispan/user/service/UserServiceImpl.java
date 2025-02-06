@@ -168,7 +168,7 @@ public class UserServiceImpl implements UserService {
 	            // 如果有看護編號，刪除與看護相關的訂單
 	            Integer caregiverNo = caregiverNoOpt.get();
 	            orderRepository.deleteBycaregiverNO(caregiverNo);
-
+	            reserveDao.deleteByCaregiverNO(caregiverNo);
 	            // 刪除看護記錄
 	            caregiverRepository.deleteByUserID(userID);
 	        }

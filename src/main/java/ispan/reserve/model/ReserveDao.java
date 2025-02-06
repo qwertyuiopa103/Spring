@@ -45,6 +45,11 @@ public interface ReserveDao extends JpaRepository<Reserve, Integer> {
    	@Query("DELETE FROM Reserve c WHERE c.userBean.userID = :userID")
    	void deleteByUserID(String userID);
     
+    @Transactional
+   	@Modifying
+   	@Query("DELETE FROM Reserve c WHERE c.caregiverBean.caregiverNO = :caregiverNO ")
+   	void deleteByCaregiverNO(Integer caregiverNO);
+    
     @Query("SELECT COUNT(o) FROM Reserve o WHERE o.userBean.userID = :userID AND o.status = '待確認'")
     long countReservestatus(@Param("userID") String userID);
     
