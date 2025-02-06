@@ -33,7 +33,7 @@ public class UserLoginService {
 
 	private static final int MAX_FAILED_ATTEMPTS = 3;
 
-	private static final int LOCKOUT_TIME_MINUTES = 1;
+	private static final int LOCKOUT_TIME_SECONDS = 10;
 
 	 public String login(String account, String userPassword) {
 	        // 使用JPA的findByPhoneOrEmail方法查找用戶
@@ -97,7 +97,7 @@ public class UserLoginService {
 	                // 若失敗次數已達上限則重新鎖定
 	                if (failedAttempts >= MAX_FAILED_ATTEMPTS) {
 	                    user.getUserSecurity().setUserLockoutEnd(
-	                        new Timestamp(now.getTime() + (LOCKOUT_TIME_MINUTES * 60 * 1000))
+	                        new Timestamp(now.getTime() + (LOCKOUT_TIME_SECONDS  * 1000))
 	                    );
 	                    userRepository.save(user);
 	                    throw new AccountLockedException("您的帳號因嘗試登錄次數過多而被鎖定，請稍後再嘗試。");
