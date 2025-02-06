@@ -14,25 +14,17 @@ public class CertifiPhotoController {
     @Autowired
     private CertifiPhotoService certifiPhotoService;
 
-    @PostMapping("/upload")
-    public ResponseEntity<?> uploadPhotos(@RequestParam("files") MultipartFile[] files) {
+    @PutMapping("/update")
+    public ResponseEntity<?> updatePhotos(@RequestBody CertifiPhotoBean certifiPhoto) {
         try {
-            if (files == null || files.length == 0) {
-                return ResponseEntity.badRequest().body("請選擇要上傳的檔案");
+            if (certifiPhoto.getCertifiPhotoID() == null) {
+                return ResponseEntity.badRequest().body("缺少 certifiPhotoID");
             }
             
-            // 驗證檔案
-            for (MultipartFile file : files) {
-                if (file.isEmpty()) {
-                    return ResponseEntity.badRequest().body("檔案不能為空");
-                }
-                // 可以加入檔案大小和類型的驗證
-            }
-            
-            CertifiPhotoBean certifiPhoto = certifiPhotoService.savePhotos(files);
-            return ResponseEntity.ok().body(certifiPhoto);
+            CertifiPhotoBean updatedPhoto = certifiPhotoService.update(certifiPhoto);
+            return ResponseEntity.ok().body(updatedPhoto);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("上傳失敗: " + e.getMessage());
+            return ResponseEntity.badRequest().body("更新失敗: " + e.getMessage());
         }
     }
 

@@ -2,6 +2,7 @@ package ispan.caregiver.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import ispan.caregiver.model.CertifiPhotoBean;
 import ispan.caregiver.model.CertifiPhotoRepository;
@@ -45,5 +46,23 @@ public class CertifiPhotoService {
     public CertifiPhotoBean findById(Integer id) {
         return certifiPhotoRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("找不到證照照片"));
+    }
+    
+    @Transactional
+    public CertifiPhotoBean update(CertifiPhotoBean certifiPhoto) {
+        // 檢查照片是否存在
+        CertifiPhotoBean existingPhoto = findById(certifiPhoto.getCertifiPhotoID());
+        if (existingPhoto == null) {
+            throw new RuntimeException("找不到證照資料");
+        }
+
+        // 更新照片資料
+        if (certifiPhoto.getPhoto1() != null) existingPhoto.setPhoto1(certifiPhoto.getPhoto1());
+        if (certifiPhoto.getPhoto2() != null) existingPhoto.setPhoto2(certifiPhoto.getPhoto2());
+        if (certifiPhoto.getPhoto3() != null) existingPhoto.setPhoto3(certifiPhoto.getPhoto3());
+        if (certifiPhoto.getPhoto4() != null) existingPhoto.setPhoto4(certifiPhoto.getPhoto4());
+        if (certifiPhoto.getPhoto5() != null) existingPhoto.setPhoto5(certifiPhoto.getPhoto5());
+
+        return certifiPhotoRepository.save(existingPhoto);
     }
 }
