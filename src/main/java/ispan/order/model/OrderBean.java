@@ -59,4 +59,5 @@ import lombok.NoArgsConstructor;
 		private String 	TradeNo;
 		@Column(name="MerchantTradeNo")
 		private String MerchantTradeNo;
+		
 	    }

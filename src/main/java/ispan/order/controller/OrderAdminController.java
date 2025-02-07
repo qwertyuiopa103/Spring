@@ -1,7 +1,6 @@
 package ispan.order.controller;
 
 import java.util.List;
-import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -13,7 +12,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import ispan.order.model.OrderBean;
@@ -31,21 +29,27 @@ public class OrderAdminController {
 	@Autowired
 	private OrderEmailService orderEmailService;
 	
-	//新增
 	@PostMapping("/createOrder")
 	public ResponseEntity<String> createOrder(@RequestBody OrderBean order) {
 	    try {
+	        // 先檢查是否有重疊的訂單
+	        boolean isOverlapping = orderService.checkForOverlappingOrder(
+	            order.getCaregiver().getCaregiverNO(), 
+	            0, // 0 代表這是新訂單，因為是新增時沒有 orderId
+	            order.getStartDate(), 
+	            order.getEndDate()
+	        );
+
+	        if (isOverlapping) {
+	            return new ResponseEntity<>("該時段已有其他訂單，請選擇其他時間", HttpStatus.CONFLICT);
+	        }
+
 	        // 創建訂單並保存
 	        OrderBean createdOrder = orderService.createOrder(order);
-	        orderEmailService.sendPaymentReminderEmail(createdOrder.getOrderId());
-
-	        // 返回創建的 OrderBean (成功的回應)
 	        return new ResponseEntity<>("訂單新增成功", HttpStatus.CREATED);
 	    } catch (IllegalArgumentException e) {
-	        // 捕獲到錯誤，返回具體的錯誤訊息
 	        return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
 	    } catch (Exception e) {
-	        // 捕獲其他錯誤，回傳通用錯誤訊息
 	        return new ResponseEntity<>("新增訂單失敗，請稍後再試", HttpStatus.INTERNAL_SERVER_ERROR);
 	    }
 	}

@@ -53,7 +53,7 @@ public class PaymentService {
         obj.setItemName("看護服務 " + orderId);
         
         // 設置回傳 URL
-        obj.setReturnURL("https://a1c9-111-249-22-59.ngrok-free.app/api/payment/callback");
+        obj.setReturnURL(" https://d80d-111-249-22-59.ngrok-free.app/api/payment/callback");
         obj.setClientBackURL("http://localhost:5173/#/home");
 
         // 不需要額外付款資訊
