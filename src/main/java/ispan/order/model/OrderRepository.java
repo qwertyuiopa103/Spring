@@ -83,6 +83,9 @@ public interface OrderRepository extends JpaRepository<OrderBean, Integer> {
         @Modifying
         @Query("UPDATE OrderBean o SET o.TradeNo = :tradeNo WHERE o.MerchantTradeNo = :merchantTradeNo")
         int updateTradeNoByMerchantTradeNo(String merchantTradeNo, String tradeNo);
+     // 查詢超過 7 天仍未付款的訂單
+        @Query("SELECT o FROM OrderBean o WHERE o.orderDate <= :cutoffDate AND o.status = '未付款'")
+        List<OrderBean> findUnpaidOrdersBefore(@Param("cutoffDate") Date cutoffDate);
     }
 	
 

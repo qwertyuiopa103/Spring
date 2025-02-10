@@ -1,15 +1,19 @@
 package ispan.order.model;
 
 import java.sql.Date;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import ispan.caregiver.model.CaregiverBean;
 import ispan.orderCancel.model.OrderCancelBean;
 import ispan.orderCancel.model.OrderCancelRepository;
+import ispan.orderCancel.model.OrderCancelService;
 import ispan.user.model.UserBean;
 import jakarta.transaction.Transactional;
 @Service
@@ -19,6 +23,11 @@ public class OrderServcieIMPL implements OrderService {
 	private OrderRepository orderRepository;
 	@Autowired
 	private OrderCancelRepository orderCancelRepository;
+	@Autowired
+	private OrderCancelService orderCancelService;
+	@Lazy
+	@Autowired
+	private OrderService orderService;
 
 	//新增
 	@Override
@@ -212,6 +221,43 @@ public class OrderServcieIMPL implements OrderService {
         return orderRepository.updateTradeNoByMerchantTradeNo(merchantTradeNo, tradeNo);
     }
 
+    @Scheduled(cron = "0 * * * * *") // 每分鐘執行一次
+    public void autoCancelUnpaidOrders() {
+        try {
+            LocalDate sevenDaysAgo = LocalDate.now().minusDays(7);
+            java.sql.Date cutoffDate = java.sql.Date.valueOf(sevenDaysAgo);
+
+            List<OrderBean> unpaidOrders = orderRepository.findUnpaidOrdersBefore(cutoffDate);
+            System.out.println("找到 " + unpaidOrders.size() + " 筆未付款的訂單");
+
+            for (OrderBean order : unpaidOrders) {
+                try {
+                    System.out.println("正在取消訂單 ID: " + order.getOrderId());
+
+                    // 建立取消記錄
+                    OrderCancelBean cancelRecord = new OrderCancelBean();
+                    cancelRecord.setCancellationReason("超過 7 天未付款，自動取消");
+                    cancelRecord.setCancelDate(LocalDate.now());
+
+                    // 儲存取消記錄
+                    OrderCancelBean savedCancelRecord = orderCancelService.createCancellation(cancelRecord);
+
+                    // 更新訂單狀態和關聯
+                    order.setStatus("已取消");
+                    order.setCancellation(savedCancelRecord);
+                    orderService.updateOrder(order);
+
+                    System.out.println("訂單 " + order.getOrderId() + " 取消成功");
+                } catch (Exception e) {
+                    System.err.println("取消訂單 " + order.getOrderId() + " 時發生錯誤: " + e.getMessage());
+                    continue; // 繼續處理下一筆訂單
+                }
+            }
+            System.out.println("自動取消程序執行完成");
+        } catch (Exception e) {
+            System.err.println("自動取消程序發生錯誤: " + e.getMessage());
+        }
+    }
    
     }
 

@@ -32,7 +32,7 @@ public class OrderEmailService {
 	            SimpleMailMessage message = new SimpleMailMessage();
 	            message.setTo(userEmail);
 	            message.setSubject("心護家_訂單付款通知");
-	            message.setText("您的訂單已成立，請盡速付款。\n\n" +
+	            message.setText("您的訂單已成立，請七天內盡速付款。\n\n" +
 	                            "首頁網址：http://localhost:5173/#/home");
 	            
 	            mailSender.send(message);

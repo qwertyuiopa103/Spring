@@ -19,6 +19,7 @@ import javax.imageio.ImageIO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import ispan.caregiver.model.CaregiverRepository;
@@ -30,32 +31,35 @@ import ispan.user.model.UserRepository;
 import ispan.user.model.UserSecurityBean;
 import ispan.user.model.UserSecurityRepository;
 import jakarta.persistence.EntityNotFoundException;
+import lombok.RequiredArgsConstructor;
 
 @Service
+@Transactional
+@RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
 
 	@Value("${file.upload.userPic.dir}")
 	private String saveFileDir;
 
-	private UserRepository userRepository;
-	private UserEmailService userEmailService;
-	private UserSecurityRepository userSecurityRepository;
-	private CaregiverRepository caregiverRepository;
-	private OrderRepository orderRepository;
-	private ReserveDao reserveDao;
+	private final UserRepository userRepository;
+	private final UserEmailService userEmailService;
+	private final UserSecurityRepository userSecurityRepository;
+	private final CaregiverRepository caregiverRepository;
+	private final OrderRepository orderRepository;
+	private final ReserveDao reserveDao;
 
-	@Autowired
-	public UserServiceImpl(UserRepository theUserRepository, UserEmailService theUserEmailService,
-			UserSecurityRepository theuserSecurityRepository, CaregiverRepository thecaregiverRepository,
-			OrderRepository theorderRepository, ReserveDao thereserveDao) {
-		userRepository = theUserRepository;
-		userEmailService = theUserEmailService;
-		userSecurityRepository = theuserSecurityRepository;
-		caregiverRepository = thecaregiverRepository;
-		orderRepository = theorderRepository;
-		reserveDao = thereserveDao;
-	}
-
+//	@Autowired
+//	public UserServiceImpl(UserRepository theUserRepository, UserEmailService theUserEmailService,
+//			UserSecurityRepository theuserSecurityRepository, CaregiverRepository thecaregiverRepository,
+//			OrderRepository theorderRepository, ReserveDao thereserveDao) {
+//		userRepository = theUserRepository;
+//		userEmailService = theUserEmailService;
+//		userSecurityRepository = theuserSecurityRepository;
+//		caregiverRepository = thecaregiverRepository;
+//		orderRepository = theorderRepository;
+//		reserveDao = thereserveDao;
+//	}
+	@Transactional(readOnly = true)
 	@Override
 	public UserBean queryOne(String userID) {
 		Optional<UserBean> result = userRepository.findById(userID);
@@ -70,7 +74,7 @@ public class UserServiceImpl implements UserService {
 
 		return userBean;
 	}
-
+	@Transactional(readOnly = true)
 	@Override
 	public List<UserBean> queryAll() {
 		return userRepository.findAll();

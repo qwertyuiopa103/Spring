@@ -46,4 +46,6 @@ public interface OrderService {
 	void updatePaymentMethodBymerchantTradeNo(String merchantTradeNo, String paymentMethod);
 	//根據MerchantTradeNo改變TradeN
 	int updateTradeNoByMerchantTradeNo(String merchantTradeNo, String tradeNo);
+	//自動取消
+	void autoCancelUnpaidOrders();
 }
